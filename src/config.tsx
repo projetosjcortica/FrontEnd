@@ -94,6 +94,7 @@ const handleSave = async () => {
   } else {
     toast.error('Erro ao salvar dados.');
   }
+  console.log(formData)
 };
 
   const handleEdit = () => {
@@ -123,7 +124,7 @@ const handleSave = async () => {
                     <Label>Nome do cliente<Input placeholder='Nome do cliente'type="text" name="nomeCliente"  value={formData.nomeCliente || ''} onChange={(e) => handleChange("nomeCliente", e.target.value)}  disabled={!isAdminAuthenticated || !isEditing}/></Label>        
                     <p>Configurações de rede</p>
                     <div id='webCfg' className="gap-2" >
-                            <div><Label>Ip da IHM<Input        className='m-0.5'   type="text"   value={formData.ip || ''} onChange={(e) => handleChange("ip", e.target.value)}  disabled={!isAdminAuthenticated || !isEditing} name="IP"/></Label></div>        
+                            <div><Label>IP da IHM<Input        className='m-0.5'   type="text"   value={formData.ip || ''} onChange={(e) => handleChange("ip", e.target.value)}  disabled={!isAdminAuthenticated || !isEditing} name="IP"/></Label></div>        
                             <div><Label>Usuário<Input          className='m-0.5'   type="text"   value={formData.user || ''} onChange={(e) => handleChange("user", e.target.value)}  disabled={!isAdminAuthenticated || !isEditing} name="user"/></Label></div>        
                             <div><Label>Senha <Input           className='m-0.5'   type="text"   value={formData.password || ''} onChange={(e) => handleChange("password", e.target.value)}  disabled={!isAdminAuthenticated || !isEditing} name="password"/></Label></div>        
                             <div><Label>Local do CSV<Input     className='m-0.5'   type="text"   value={formData.localCSV || ''} readOnly disabled={!isAdminAuthenticated || !isEditing} name="localCSV"/><Button className="w-34" onClick={async()=> {const path = await window.electronAPI.selectFolder();if (path){console.log("caminho: ",path);handleChange("localCSV",path);}}} disabled={!isAdminAuthenticated || !isEditing}>selecionar arquivo</Button></Label></div>   

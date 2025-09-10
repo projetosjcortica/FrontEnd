@@ -1,101 +1,130 @@
-import { app as s, ipcMain as f, dialog as v, BrowserWindow as w } from "electron";
-import { fileURLToPath as D } from "node:url";
-import r from "node:path";
-import c from "node:fs";
-import { spawn as S } from "node:child_process";
-const p = r.dirname(D(import.meta.url));
-process.env.APP_ROOT = r.join(p, "..");
-const d = process.env.VITE_DEV_SERVER_URL, T = r.join(process.env.APP_ROOT, "dist-electron"), g = r.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = d ? r.join(process.env.APP_ROOT, "public") : g;
-let a, i;
-const l = r.join(s.getPath("userData"), "formData.json");
-function u(o) {
-  if (!c.existsSync(o)) return {};
+import { app, ipcMain, dialog, BrowserWindow } from "electron";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import fs from "node:fs";
+import { spawn } from "node:child_process";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+process.env.APP_ROOT = path.join(__dirname, "..");
+const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
+const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
+const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
+let win;
+let backendProcess;
+const dataFilePath = path.join(app.getPath("userData"), "formData.json");
+function readJSON(filePath) {
+  if (!fs.existsSync(filePath)) return {};
   try {
-    const e = c.readFileSync(o, "utf-8");
-    return JSON.parse(e);
-  } catch (e) {
-    return console.error("Erro ao fazer parse do JSON:", e), {};
+    const content = fs.readFileSync(filePath, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    console.error("Erro ao fazer parse do JSON:", err);
+    return {};
   }
 }
-function E(o, e) {
+function writeJSON(filePath, data) {
   try {
-    return c.writeFileSync(o, JSON.stringify(e, null, 2), "utf-8"), !0;
-  } catch (t) {
-    return console.error("Erro ao salvar JSON:", t), !1;
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch (err) {
+    console.error("Erro ao salvar JSON:", err);
+    return false;
   }
 }
-f.handle("save-data", async (o, e, t) => {
+ipcMain.handle("save-data", async (_event, key, value) => {
   try {
-    const n = u(l);
-    if (n[e] = t, !E(l, n)) throw new Error("Falha ao salvar dados");
-    return !0;
-  } catch (n) {
-    return console.error("Erro ao salvar dados:", n), !1;
+    const existingData = readJSON(dataFilePath) || {};
+    existingData[key] = value;
+    const saved = writeJSON(dataFilePath, existingData);
+    if (!saved) throw new Error("Falha ao salvar dados");
+    return true;
+  } catch (err) {
+    console.error("Erro ao salvar dados:", err);
+    return false;
   }
 });
-f.handle("load-data", async (o, e) => {
+ipcMain.handle("load-data", async (_event, key) => {
   try {
-    const n = u(l)[e];
-    return typeof n == "string" || typeof n == "number" || typeof n == "boolean" ? n : null;
-  } catch (t) {
-    return console.error("Erro ao carregar dados:", t), null;
+    const data = readJSON(dataFilePath);
+    if (!data) return {};
+    return data[key] || {};
+  } catch (err) {
+    console.error("Erro ao carregar dados:", err);
+    return {};
   }
 });
-f.handle("select-folder", async () => {
-  const o = await v.showOpenDialog({
+ipcMain.handle("select-folder", async () => {
+  const result = await dialog.showOpenDialog({
     properties: ["openDirectory"]
   });
-  if (o.canceled || o.filePaths.length === 0)
-    return console.log("Nenhuma pasta selecionada"), null;
-  const e = o.filePaths[0];
-  return console.log("Pasta selecionada:", e), e;
+  if (result.canceled || result.filePaths.length === 0) {
+    console.log("Nenhuma pasta selecionada");
+    return null;
+  }
+  const folderPath = result.filePaths[0];
+  console.log("Pasta selecionada:", folderPath);
+  return folderPath;
 });
-function h() {
-  a = new w({
-    icon: r.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+function createWindow() {
+  win = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: r.join(p, "preload.mjs")
+      preload: path.join(__dirname, "preload.mjs")
     }
-  }), a.webContents.on("did-finish-load", () => {
-    a == null || a.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
-  }), d ? a.loadURL(d) : a.loadFile(r.join(g, "index.html"));
+  });
+  win.maximize(), win.webContents.on("did-finish-load", () => {
+    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+  });
+  if (VITE_DEV_SERVER_URL) {
+    win.loadURL(VITE_DEV_SERVER_URL);
+  } else {
+    win.loadFile(path.join(RENDERER_DIST, "index.html"));
+  }
 }
-s.whenReady().then(() => {
-  const e = u(l).formData || {}, t = {
-    server: e.serverDB || "localhost",
-    user: e.userDB || "root",
-    password: e.passwordDB || "",
-    database: e.database || "testes"
+app.whenReady().then(() => {
+  const rawData = readJSON(dataFilePath);
+  const formData = rawData.formData || {};
+  const dbConfig = {
+    server: formData.serverDB || "localhost",
+    user: formData.userDB || "root",
+    password: formData.passwordDB || "",
+    database: formData.database || "testes"
   };
-  console.log("Configuração do banco enviada:", t), i = S(
+  console.log("Configuração do banco enviada:", dbConfig);
+  backendProcess = spawn(
     "node",
-    [r.join(p, "../services/UseCase/GetTable.js"), JSON.stringify(t)],
+    [path.join(__dirname, "../services/UseCase/GetTable.js"), JSON.stringify(dbConfig)],
     {
       stdio: "inherit",
-      windowsHide: !0
+      windowsHide: true
     }
-  ), h(), s.on("activate", () => {
-    w.getAllWindows().length === 0 && h();
+  );
+  createWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    }
   });
 });
-s.on("window-all-closed", () => {
-  i && i.kill(), process.platform !== "darwin" && s.quit();
+app.on("window-all-closed", () => {
+  if (backendProcess) backendProcess.kill();
+  if (process.platform !== "darwin") app.quit();
 });
-s.on("will-quit", () => {
-  i && i.kill();
+app.on("will-quit", () => {
+  if (backendProcess) backendProcess.kill();
 });
-const P = r.join(s.getPath("userData"), "error.log"), m = c.createWriteStream(P, { flags: "a" });
-process.on("uncaughtException", (o) => {
-  m.write(`[${(/* @__PURE__ */ new Date()).toISOString()}] Uncaught Exception: ${o.stack}
+const logFilePath = path.join(app.getPath("userData"), "error.log");
+const logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+process.on("uncaughtException", (error) => {
+  logStream.write(`[${(/* @__PURE__ */ new Date()).toISOString()}] Uncaught Exception: ${error.stack}
 `);
 });
-process.on("unhandledRejection", (o) => {
-  m.write(`[${(/* @__PURE__ */ new Date()).toISOString()}] Unhandled Rejection: ${o}
+process.on("unhandledRejection", (reason) => {
+  logStream.write(`[${(/* @__PURE__ */ new Date()).toISOString()}] Unhandled Rejection: ${reason}
 `);
 });
 export {
-  T as MAIN_DIST,
-  g as RENDERER_DIST,
-  d as VITE_DEV_SERVER_URL
+  MAIN_DIST,
+  RENDERER_DIST,
+  VITE_DEV_SERVER_URL
 };

@@ -4,6 +4,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { spawn, ChildProcess } from 'node:child_process';
 
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 process.env.APP_ROOT = path.join(__dirname, '..');
@@ -58,7 +59,7 @@ function writeJSON(filePath: string, data: AppData): boolean {
 // IPC Handlers
 ipcMain.handle('save-data', async (_event, key: string, value: string | number | boolean): Promise<boolean> => {
   try {
-    const existingData = readJSON(dataFilePath);
+    const existingData = readJSON(dataFilePath) || {  };
     existingData[key] = value;
     const saved = writeJSON(dataFilePath, existingData);
     if (!saved) throw new Error('Falha ao salvar dados');
@@ -69,17 +70,14 @@ ipcMain.handle('save-data', async (_event, key: string, value: string | number |
   }
 });
 
-ipcMain.handle('load-data', async (_event, key: string): Promise<string | number | boolean | null> => {
+ipcMain.handle('load-data', async (_event, key: string): Promise< unknown |string | number | boolean | null > => {
   try {
-    const data = readJSON(dataFilePath);
-    const value = data[key];
-    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      return value;
-    }
-    return null;
+    const data = readJSON(dataFilePath); 
+    if (!data) return {}; 
+    return data[key] || {};
   } catch (err) {
-    console.error('Erro ao carregar dados:', err);
-    return null;
+    console.error("Erro ao carregar dados:", err);
+    return {};
   }
 });
 
@@ -105,6 +103,8 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.mjs'),
     },
   });
+
+  win.maximize(),
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString());

@@ -1,1 +1,9 @@
-"use strict";const e=require("electron");e.contextBridge.exposeInMainWorld("electronAPI",{loadData:r=>e.ipcRenderer.invoke("load-data",r),saveData:(r,n)=>e.ipcRenderer.invoke("save-data",r,n),selectFolder:()=>e.ipcRenderer.invoke("select-folder"),selectFile:()=>e.ipcRenderer.invoke("select-file"),cleanDB:()=>e.ipcRenderer.invoke("clean-db")});
+"use strict";
+const electron = require("electron");
+electron.contextBridge.exposeInMainWorld("electronAPI", {
+  loadData: (key) => electron.ipcRenderer.invoke("load-data", key),
+  saveData: (key, data) => electron.ipcRenderer.invoke("save-data", key, data),
+  selectFolder: () => electron.ipcRenderer.invoke("select-folder"),
+  selectFile: () => electron.ipcRenderer.invoke("select-file"),
+  cleanDB: () => electron.ipcRenderer.invoke("clean-db")
+});

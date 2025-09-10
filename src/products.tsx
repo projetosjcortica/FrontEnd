@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import { Input } from "./components/ui/input";
+import { RadioGroup, RadioGroupItem } from "./components/ui/radio-group";
+import { Label } from "./components/ui/label";
+
 
 export type ColLabels = Record<string, string>;
 export const colLabelsBase = {
@@ -90,13 +93,26 @@ function Products() {
 
 
     return (
-        <div id="display" className="w-[75vw] h-[90vh] m-3">
+        <div id="display" className="w-[60vw] h-[95vh] m-3">
             <h2 className="text-3xl">Editar nome dos Produtos</h2>
-            <div className="border rounded p-3 grid grid-cols-3 gap-1">
+            <div className="border rounded p-3 grid grid-cols-2 gap-4 shadow-xl/20">
             {editableColumns.map(col => (
                 <div key={col}>
-                <label htmlFor={col}>{col}</label>
-                <Input className='m-0.5 h-8'  type="text" id={col} value={colLabels[col]}  onChange={e => handleLabelChange(col, e.target.value)}/>
+                <div className="flex flex-row justify-center items-center gap-1 border border-black rounded pr-1">
+                  <Input className='m-0.5 h-8 inset-shadow-1'  type="text" placeholder={col} id={col} value={colLabels[col]}  onChange={e => handleLabelChange(col, e.target.value)}/>
+                  <div>
+                    <RadioGroup className="flex flex-row gap-1">
+                      <div className="flex flex-row">
+                        <RadioGroupItem value="gram" className="border-black mx-1"/>
+                        <Label>g</Label>
+                      </div>
+                      <div className="flex flex-row">
+                        <RadioGroupItem value="kilogram" className="border-black mx-1"/>
+                        <Label>kg</Label>
+                      </div>
+                    </RadioGroup>
+                  </div>
+                </div>
                 </div>
             ))}
             </div>

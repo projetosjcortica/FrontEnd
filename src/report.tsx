@@ -5,6 +5,7 @@ import { Button } from "./components/ui/button";
 import { Table, TableCell, TableHead, TableHeader, TableBody, TableRow } from "./components/ui/table";
 import { colLabelsBase } from "./products"
 import { Separator } from "./components/ui/separator";
+import { Input } from "./components/ui/input";
 // import { Pie, PieChart } from "recharts"
 // import { ChartContainer,  ChartTooltip,  ChartTooltipContent } from '@/components/ui/chart'
 
@@ -59,151 +60,153 @@ function Report() {
   
   return (
     <>
-        <div className="overflow-hidden flex flex-row gap-2 w-[100vw]">
-            <div id="db" className="w-[60vw] mx-auto h-[90vh] rounded scroll-smooth scrollbar-custom">
-              {loading && <p>Carregando dados...</p>}
-              {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
-              <TableComponent data={data} columns={columns}/>
-            </div>
-          <div id="options"className="w-[20vw] flex flex-col justify-start items-center h-[90vh] border rounded ">
-              <div id="buttoms" className="flex flex-row gap-1 h-20">
-                  
-                  <Button 
-                    className={`mt-5.5`}
-                    onClick={handleClick}>
-                    
-                    <span>Filtro</span>
-                  </Button>
-                    
-                  <Button
-                    className={`mt-5.5 transition-colors `}
-                    onClick={handleClick}
-                  >
-                    <span className="tooltip-text">Automático</span>
-                    </Button>
+        <div className="overflow-hidden flex flex-col gap-2 w-[100vw]">
+            <div id="searchBar" className="h-10 flex flex-row">
+              <Input type="text" placeholder="Digite sua formula" className="border-black"></Input>
+              <Button 
+                className="ml-2"
+                onClick={handleClick}>
+                      
+                <span>Data</span>
+              </Button>
+                      
+              <Button
+                className="ml-2"
+                onClick={handleClick}>
                 
-                  <Button 
-                    className="mt-5.5" onClick={handleClick}>
-                    
-                    <span className="tooltip-text">Upload</span>
-                  </Button>
-
+                <span className="tooltip-text">Automático</span>
+              </Button>
+                  
+              <Button 
+                className="ml-2" 
+                onClick={handleClick}>
+                      
+                <span className="tooltip-text">Upload</span>
+              </Button>
+            </div>
+            <div id="display" className="flex flex-row gap-3.5">
+              <div id="db" className="w-[60vw] mx-auto h-[90vh] scroll-smooth scrollbar-custom  shadow-xl/16">
+                {loading && <p className="flex justify-center items-center">Carregando dados...</p>}
+                {error && <p style={{ color: 'red' }}>Erro: {error}</p>}
+                <TableComponent data={data} columns={columns}/>
               </div>
-              <div id="showData" className="w-[90%] h-[86.5%] flex flex-col justify-start">
-                <div id="displaySquaree" className="w-[100%] h-[26.5%] grid grid-cols-2 gap-3 ">  
-                  <div id="TotalProduced" className="border-2 rounded-lg max-h-[95.16px] w-[100%] h-[100%] flex flex-col justify-start text-center">
-                    <p className="subpixel-antialiased font-semibold m-3">Total Produzido</p>
-                    {/* {(() => {
-                    if (!range?.from) {
-                      return null;
-                    }
+              <div id="options"className="w-[20vw] flex flex-col justify-start items-center h-[90vh] shadow-xl/16">
+                <div id="showData" className="w-[90%] h-[86.5%] flex flex-col justify-start pt-4.5 gap-5">
+                  <div id="displaySquaree" className="w-[100%] h-[26.5%] grid grid-cols-2 gap-3 ">  
+                    <div id="TotalProduced" className="border border-black rounded-lg max-h-[95.16px] w-[100%] h-[100%] flex flex-col justify-start text-center">
+                      <p className="subpixel-antialiased font-semibold m-3">Produzido</p>
+                      {/* {(() => {
+                      if (!range?.from) {
+                        return null;
+                      }
 
-                        // Total Produzido
-                        let totalProduzido = 0;
-                        linhasFiltradas.forEach((row) => {
-                          columns.forEach((col, idx) => {
-                            if (idx >= 5) totalProduzido += Number(row[col]) || 0;
+                          // Total Produzido
+                          let totalProduzido = 0;
+                          linhasFiltradas.forEach((row) => {
+                            columns.forEach((col, idx) => {
+                              if (idx >= 5) totalProduzido += Number(row[col]) || 0;
+                            });
                           });
-                        });
-
-                    return (
-                      <>
-                        <span className="text-2xl font-bold text-primary">
-                          {totalProduzido}
-                        </span>
-                      </>
-                    );
-                  })()} */}
-                </div>
-                  <div id="TotalBeat" className="border-2 rounded-lg max-h-[95.16px] w-[100%] h-[100%] flex flex-col justify-start text-center">
-                    <p className="subpixel-antialiased font-semibold m-3">Batidas</p>
-                    {/* {(() => {
-                      if (!range?.from) return null;
-
-                      const totalBatidas = linhasFiltradas.length;
 
                       return (
-                        <span className="text-2xl font-bold text-primary">
-                          {linhasFiltradas.length}
-                        </span>
+                        <>
+                          <span className="text-2xl font-bold text-primary">
+                            {totalProduzido}
+                          </span>
+                        </>
                       );
                     })()} */}
                   </div>
-                  <div id="StartHour" className="border-2 rounded-lg w-[100%] h-[100%] flex flex-row justify-center ">
-                    <p className="subpixel-antialiased font-semibold m-3">hora de inicio</p>
-                  </div>
-                  <div id="EndHour" className="border-2 rounded-lg w-[100%] h-[100%] flex flex-row justify-center ">
-                    <p className="subpixel-antialiased font-semibold m-3">hora final</p>
-                  </div>
-                </div>  
-                <Separator className="mt-3 border-1" />
-                <div
-                  id="TotalProducts"
-                  className="mt-3 w-full h-50 bg-background sticky top-0 border rounded-2xl shadow-md overflow-auto scrollbar-custom"
-                >
-                  <Table className="w-full text-sm">
-                    <TableHeader className="bg-muted/50">
-                      <TableRow className="[&>*]:whitespace-nowrap bg-background sticky top-0 after:content-[''] after:inset-x-0 after:h-px after:bg-border after:absolute after:bottom-0">
-                        <TableHead className="text-center font-semibold">Ingrediente</TableHead>
-                        <TableHead className="text-center font-semibold">Quantidade Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-
-                    <TableBody>
+                    <div id="TotalBeat" className="border border-black rounded-lg max-h-[95.16px] w-[100%] h-[100%] flex flex-col justify-start text-center">
+                      <p className="subpixel-antialiased font-semibold m-3">Batidas</p>
                       {/* {(() => {
-                        const linhasFiltradas = getFilteredRows(data, columns, range, selectedFormula);
-                        const totais = {};
-                        linhasFiltradas.forEach((row) => {
-                          columns.forEach((col, idx) => {
-                            if (idx >= 5) {
-                              const valor = Number(row[col]) || 0;
-                              totais[col] = (totais[col] || 0) + valor;
-                            }
-                          });
-                        });
-                        const totaisFiltrados = Object.entries(totais).filter(([_, total]) => total > 0);
+                        if (!range?.from) return null;
 
-                        if (totaisFiltrados.length === 0) {
-                          return (
-                            <TableRow>
-                              <TableCell colSpan={2} className="text-center italic">
-                                Nenhum dado disponível para este período
-                              </TableCell>
-                            </TableRow>
-                          );
-                        }
+                        const totalBatidas = linhasFiltradas.length;
 
-                        return totaisFiltrados.map(([colKey, total], idx) => (
-                          <TableRow key={idx} className="hover:bg-muted/30 transition-colors">
-                            <TableCell className="text-center">{colLabels[colKey] || colKey}</TableCell>
-                            <TableCell className="text-center font-bold">{total}</TableCell>
-                          </TableRow>
-                        ));
+                        return (
+                          <span className="text-2xl font-bold text-primary">
+                            {linhasFiltradas.length}
+                          </span>
+                        );
                       })()} */}
-                    </TableBody>
-                  </Table>
-                  {/* <ChartContainer
-                    config={chartConfig}
-                    className="mx-auto aspect-square max-h-[250px]"
+                    </div>
+                    <div id="StartHour" className="border border-black rounded-lg w-[100%] h-[100%] flex flex-row justify-center ">
+                      <p className="subpixel-antialiased font-semibold m-3">hora de inicio</p>
+                    </div>
+                    <div id="EndHour" className="border border-black rounded-lg w-[100%] h-[100%] flex flex-row justify-center ">
+                      <p className="subpixel-antialiased font-semibold m-3">hora final</p>
+                    </div>
+                  </div>  
+                  <Separator className="mt-3 border-0.5 border-black" />
+                  <div
+                    id="TotalProducts"
+                    className="mt-3 w-full h-50 bg-background sticky top-0 border border-black rounded-2xl shadow-md overflow-auto scrollbar-custom"
                   >
-                    <PieChart>
-                      <ChartTooltip
-                        cursor={false}
-                        content={<ChartTooltipContent hideLabel />}
-                      />
-                      <Pie data={chartData} dataKey="visitors" nameKey="browser" />
-                    </PieChart>
-                  </ChartContainer> */}
-                </div>
-                <div id='exportBtns' className="flex flex-col justify-center items-center gap-1">
-                  <h2>Gerar Relatorio</h2>  
-                  <div className="gap-2 justify-center items-center">
-                    <Button id="pdf">pdf</Button>
-                    <Button id="excel">excel</Button>
+                    <Table className="w-full text-sm">
+                      <TableHeader className="bg-muted/50">
+                        <TableRow className="[&>*]:whitespace-nowrap bg-background sticky top-0 after:content-[''] after:inset-x-0 after:h-px border-black after:bg-border after:absolute after:bottom-0">
+                          <TableHead className="text-center font-semibold">Ingrediente</TableHead>
+                          <TableHead className="text-center font-semibold">Quantidade</TableHead>
+                        </TableRow>
+                      </TableHeader>
+
+                      <TableBody>
+                        {/* {(() => {
+                          const linhasFiltradas = getFilteredRows(data, columns, range, selectedFormula);
+                          const totais = {};
+                          linhasFiltradas.forEach((row) => {
+                            columns.forEach((col, idx) => {
+                              if (idx >= 5) {
+                                const valor = Number(row[col]) || 0;
+                                totais[col] = (totais[col] || 0) + valor;
+                              }
+                            });
+                          });
+                          const totaisFiltrados = Object.entries(totais).filter(([_, total]) => total > 0);
+
+                          if (totaisFiltrados.length === 0) {
+                            return (
+                              <TableRow>
+                                <TableCell colSpan={2} className="text-center italic">
+                                  Nenhum dado disponível para este período
+                                </TableCell>
+                              </TableRow>
+                            );
+                          }
+
+                          return totaisFiltrados.map(([colKey, total], idx) => (
+                            <TableRow key={idx} className="hover:bg-muted/30 transition-colors">
+                              <TableCell className="text-center">{colLabels[colKey] || colKey}</TableCell>
+                              <TableCell className="text-center font-bold">{total}</TableCell>
+                            </TableRow>
+                          ));
+                        })()} */}
+                      </TableBody>
+                    </Table>
+                    {/* <ChartContainer
+                      config={chartConfig}
+                      className="mx-auto aspect-square max-h-[250px]"
+                    >
+                      <PieChart>
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent hideLabel />}
+                        />
+                        <Pie data={chartData} dataKey="visitors" nameKey="browser" />
+                      </PieChart>
+                    </ChartContainer> */}
+                  </div>
+                  <div id='exportBtns' className="flex flex-col justify-center items-center gap-1">
+                    <h2 className="font-semibold">Gerar Relatorio</h2>  
+                    <div className="gap-2 justify-center items-center flex">
+                      <Button id="pdf">pdf</Button>
+                      <Button id="excel">excel</Button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+          </div>
         </div>
     </>
   );
@@ -439,7 +442,7 @@ function handleCellClick(
 //   });
 // }
 
-  if (!data.length) return <p>Nenhum dado para mostrar</p>;
+  if (!data.length) return <p className="flex justify-center items-center">Nenhum dado para mostrar</p>;
   
 
     return (

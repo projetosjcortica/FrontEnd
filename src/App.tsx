@@ -3,7 +3,7 @@ import Home from './home';
 import Cfg from './config';
 import Report from './report';
 import Products from './products';
-import { Sidebar,SidebarFooter,SidebarContent,SidebarGroup,SidebarHeader,SidebarProvider,SidebarGroupContent,SidebarMenu,SidebarMenuButton,SidebarMenuItem,} from "./components/ui/sidebar";
+import { Sidebar,SidebarFooter,SidebarContent,SidebarGroup,SidebarHeader,SidebarProvider,SidebarGroupContent,SidebarMenu,SidebarMenuButton,SidebarMenuItem, SidebarGroupLabel,} from "./components/ui/sidebar";
 import { HomeIcon, Settings, Sheet,WheatIcon } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
 import { ToastContainer } from 'react-toastify';
@@ -58,11 +58,11 @@ const App = () => {
     }
   ]
   return (<div id='app' className='flex flex-row w-screen h-dvh overflow-hidden gap-0 '>
-      <SidebarProvider>
-        <Sidebar className="bg-sidebar-red-600">
-          <SidebarHeader className="pt-6">
+      <SidebarProvider className='shadow-xl'>
+        <Sidebar className="bg-sidebar-red-600 shadow-xl">
+          <SidebarHeader className="pt-6 ">
             <div id='avatar' className='flex gap-3'>
-              <Avatar className="h-12 w-12">
+              <Avatar className="h-12 w-12 ml-2">
                 <AvatarImage src="" alt="Profile" />
                 <AvatarFallback><Factory/></AvatarFallback>
               </Avatar>
@@ -74,6 +74,7 @@ const App = () => {
           </SidebarHeader>
           <SidebarContent>
              <SidebarGroup>
+              <SidebarGroupLabel>Menu</SidebarGroupLabel>
               <Separator/>
                 <SidebarGroupContent>
                   <SidebarMenu>
@@ -83,7 +84,7 @@ const App = () => {
                           onClick={() => setView(item.view)}
                           className={`flex items-center gap-2 transition-colors 
                             ${view === item.view 
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground inset-shadow-sm" 
                               : "hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"}`}
                         >
                           <item.icon />
@@ -97,6 +98,7 @@ const App = () => {
           </SidebarContent>
           <SidebarFooter>
             <SidebarGroup>
+                <SidebarGroupLabel>Outros</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
                     {itemsFooter.map((itemsFooter) => (
@@ -119,7 +121,7 @@ const App = () => {
           </SidebarFooter>
         </Sidebar>
       </SidebarProvider>  
-        <div id='main-content' className='flex flex-row justify-center items-center w-[200vh] h-full overflow-auto gap-5 px-4 py-6'>
+        <div id='main-content' className='flex flex-row justify-center items-center w-[200vh] h-full overflow-auto gap-5 px-4 py-1'>
             {content}
                 <ToastContainer
                   position="bottom-right"
