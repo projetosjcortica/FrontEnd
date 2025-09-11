@@ -119,7 +119,7 @@ const handleSave = async () => {
     return(
         <div id="cfgContent" className=" w-full flex justify-center items-center">
             <div id='layoutCfg' className="flex flex-row-reverse gap-10">
-                <div id="geral" className="flex flex-col border rounded p-5 h-[43em] w-[29em] gap-4 shadow-xl/20">
+                <div id="geral" className="flex flex-col rounded p-5 h-[43em] w-[29em] gap-4 shadow-xl/16">
                     <h2>GERAL</h2>
                     <Label>Nome do cliente<Input placeholder='Nome do cliente'type="text" name="nomeCliente"  value={formData.nomeCliente || ''} onChange={(e) => handleChange("nomeCliente", e.target.value)}  disabled={!isAdminAuthenticated || !isEditing}/></Label>        
                     <p>Configurações de rede</p>
@@ -165,7 +165,7 @@ const handleSave = async () => {
                     </div>
                 </div>
                 
-        <div id='adm' className="border rounded p-5 w-[29em] gap-4 shadow-xl/10">
+        <div id='adm' className=" rounded p-5 w-[29em] gap-4 shadow-xl/16">
           <h2>ADMINISTRADOR</h2>
 
               <Input

@@ -2,9 +2,9 @@ import { useState } from 'react'
 import Home from './home';
 import Cfg from './config';
 import Report from './report';
-import Products from './products';
+
 import { Sidebar,SidebarFooter,SidebarContent,SidebarGroup,SidebarHeader,SidebarProvider,SidebarGroupContent,SidebarMenu,SidebarMenuButton,SidebarMenuItem, SidebarGroupLabel,} from "./components/ui/sidebar";
-import { HomeIcon, Settings, Sheet,WheatIcon } from 'lucide-react';
+import { HomeIcon, Settings, Sheet} from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
 import { ToastContainer } from 'react-toastify';
 import './index.css'
@@ -26,9 +26,6 @@ const App = () => {
     case 'Cfg':
       content = <Cfg />;
       break;
-    case 'Products':
-      content = <Products/>;
-      break;
     default:
       content = <h1>404 - Not Found</h1>;
   }
@@ -43,12 +40,6 @@ const App = () => {
       icon:Sheet,
       view: 'Report'
     },
-    {
-      title:"Produtos",
-      icon:WheatIcon,
-      view: 'Products'
-    },
-
   ]
   const itemsFooter=[
     {
@@ -57,9 +48,10 @@ const App = () => {
       view: 'Cfg'
     }
   ]
-  return (<div id='app' className='flex flex-row w-screen h-dvh overflow-hidden gap-0 '>
-      <SidebarProvider className='shadow-xl'>
-        <Sidebar className="bg-sidebar-red-600 shadow-xl">
+  return (<div id='app' className='flex flex-row w-screen h-dvh '>
+    <div id='sidebar' className='flex items-end'>
+      <SidebarProvider className='flex items-end'>
+        <Sidebar className="bg-sidebar-red-600 shadow-xl h-[100vh]">
           <SidebarHeader className="pt-6 ">
             <div id='avatar' className='flex gap-3'>
               <Avatar className="h-12 w-12 ml-2">
@@ -120,8 +112,9 @@ const App = () => {
               </SidebarGroup>
           </SidebarFooter>
         </Sidebar>
-      </SidebarProvider>  
-        <div id='main-content' className='flex flex-row justify-center items-center w-[200vh] h-full overflow-auto gap-5 px-4 py-1'>
+      </SidebarProvider>
+       </div>  
+        <div id='main-content' className='flex flex-row justify-center items-center w-[200vh] h-full overflow-auto gap-5 ml-5 py-1'>
             {content}
                 <ToastContainer
                   position="bottom-right"

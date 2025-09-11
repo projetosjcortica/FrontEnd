@@ -2,7 +2,6 @@ import { app, ipcMain, dialog, BrowserWindow } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import fs from "node:fs";
-import { spawn } from "node:child_process";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -10,7 +9,6 @@ const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
-let backendProcess;
 const dataFilePath = path.join(app.getPath("userData"), "formData.json");
 function readJSON(filePath) {
   if (!fs.existsSync(filePath)) return {};
@@ -91,14 +89,6 @@ app.whenReady().then(() => {
     database: formData.database || "testes"
   };
   console.log("Configuração do banco enviada:", dbConfig);
-  backendProcess = spawn(
-    "node",
-    [path.join(__dirname, "../services/UseCase/GetTable.js"), JSON.stringify(dbConfig)],
-    {
-      stdio: "inherit",
-      windowsHide: true
-    }
-  );
   createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -107,11 +97,9 @@ app.whenReady().then(() => {
   });
 });
 app.on("window-all-closed", () => {
-  if (backendProcess) backendProcess.kill();
   if (process.platform !== "darwin") app.quit();
 });
 app.on("will-quit", () => {
-  if (backendProcess) backendProcess.kill();
 });
 const logFilePath = path.join(app.getPath("userData"), "error.log");
 const logStream = fs.createWriteStream(logFilePath, { flags: "a" });

@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import fs from 'node:fs';
-import { spawn, ChildProcess } from 'node:child_process';
+
 
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -18,7 +18,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
   : RENDERER_DIST;
 
 let win: BrowserWindow | null;
-let backendProcess: ChildProcess | undefined;
+
 
 const dataFilePath = path.join(app.getPath('userData'), 'formData.json');
 
@@ -130,15 +130,6 @@ app.whenReady().then(() => {
 
   console.log('Configuração do banco enviada:', dbConfig);
 
-  backendProcess = spawn(
-    'node',
-    [path.join(__dirname, '../services/UseCase/GetTable.js'), JSON.stringify(dbConfig)],
-    {
-      stdio: 'inherit',
-      windowsHide: true,
-    }
-  );
-
   createWindow();
 
   app.on('activate', () => {
@@ -150,12 +141,10 @@ app.whenReady().then(() => {
 
 // 🧼 Encerrar backend e app corretamente
 app.on('window-all-closed', () => {
-  if (backendProcess) backendProcess.kill();
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('will-quit', () => {
-  if (backendProcess) backendProcess.kill();
 });
 
 // Logging
