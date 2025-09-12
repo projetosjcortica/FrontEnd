@@ -2,9 +2,10 @@ import { useState, useEffect, useRef } from "react";
 import 'react-toastify/dist/ReactToastify.css';
 import { Button } from "./components/ui/button"
 import Products, { colLabelsBase } from "./products";
-import { Input } from "./components/ui/input";
+// import { Input } from "./components/ui/input";
 import { SelectSeparator } from "./components/ui/select"
 import TableComponent from "./TableComponent";
+import  FiltrosBar  from "./components/searchBar"
 
 
 function Report() {
@@ -43,9 +44,10 @@ function Report() {
       }
     };
   }, []);
+  
 
   return (
-    <div className="overflow-hidden flex flex-col gap-2 w-[100vw] h-full">
+    <div className="overflow-hidden flex flex-col gap-7 w-[100vw] h-full">
       <div id="top-container" className="h-30 flex flex-row justify-between">
         <div id="toggle-page" className="flex flex-row items-end">
           <div id="buttons" className="flex flex-row gap-2">
@@ -55,10 +57,10 @@ function Report() {
           <SelectSeparator/>
         </div>
         <div id="searchBar" className="flex flex-row items-end justify-end">
-          <Input type="text" placeholder="Digite sua formula" className="border-black w-100" />
-          <Button className="ml-2" onClick={handleClick}>
-            <span>Data</span>
-          </Button>
+          <div id="searchBar" className="flex flex-row items-end justify-end">
+            <FiltrosBar/>
+
+          </div>
           <Button className="ml-2" onClick={handleClick}>
             <span className="tooltip-text">Automático</span>
           </Button>

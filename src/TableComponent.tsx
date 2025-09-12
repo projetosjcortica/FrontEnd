@@ -1,78 +1,322 @@
-import { useState, useEffect} from "react";
-import { Table,TableHeader,TableHead,TableBody,TableCell,TableRow } from "./components/ui/table";
-import axios from 'axios';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  Table,
+  TableHeader,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "./components/ui/table";
+import { useFiltros } from "./hooks/useFiltros";
+import { useReportData } from "./hooks/useReportData";
+import { ReportRow } from "./components/types";
 
-export interface TableRowData {
-  [key: string]: string | number | null;
+interface TableComponentProps {
+  filtroTexto?: string;
 }
 
-interface ReportRow {
-  Dia: string;          
-  Hora: string;         
-  Nome: string;         
-  Form1: number;
-  Form2: number;
-  values: number[];
-}
+export default function TableComponent({ filtroTexto }: TableComponentProps) {
+  const { filtros } = useFiltros();
+  const { dados, loading, error } = useReportData(filtros);
+  
+  const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
+  const [lastSelected, setLastSelected] = useState<[number, number] | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null); // Mudei para div (wrapper)
+  const isSelecting = useRef(false);
+  const selectionStart = useRef<[number, number] | null>(null);
+  const selectionMode = useRef<'normal' | 'additive' | 'range'>('normal');
+  
+  const columns = ["Dia", "Hora", "Nome", "Form1", "Form2"];
+  const cellKey = (rowIdx: number, colIdx: number) => `${rowIdx},${colIdx}`;
 
-interface ReportData {
-  page: number;
-  pageSize: number;
-  rows: ReportRow[];
-}
+  const selectCellRange = useCallback((startRow: number, startCol: number, endRow: number, endCol: number) => {
+    const rowStart = Math.min(startRow, endRow);
+    const rowEnd = Math.max(startRow, endRow);
+    const colStart = Math.min(startCol, endCol);
+    const colEnd = Math.max(startCol, endCol);
 
-export default function TableComponent() {
-  const [dados, setDados] = useState<ReportRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axios.get<ReportData>(
-          "http://192.168.5.128:3000/api/relatorio/"
-        );
-        setDados(response.data.rows);
-      } catch (err) {
-        setError("Erro ao carregar relatórios");
-        console.error(err);
-      } finally {
-        setLoading(false);
+    const newSet = new Set<string>();
+    for (let r = rowStart; r <= rowEnd; r++) {
+      for (let c = colStart; c <= colEnd; c++) {
+        newSet.add(cellKey(r, c));
       }
-    };
-
-    fetchData();
+    }
+    return newSet;
   }, []);
 
-  if (loading) return <p>Carregando...</p>;
-  if (error) return <p>{error}</p>;
+  const handleCellClick = useCallback((rowIdx: number, colIdx: number, e: React.MouseEvent) => {
+    const key = cellKey(rowIdx, colIdx);
+    
+    if (e.ctrlKey || e.metaKey) {
+      setSelectedCells((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(key)) {
+          newSet.delete(key);
+        } else {
+          newSet.add(key);
+        }
+        return newSet;
+      });
+      setLastSelected([rowIdx, colIdx]);
+    } else if (e.shiftKey && lastSelected) {
+      const [lastRow, lastCol] = lastSelected;
+      const rangeSelection = selectCellRange(lastRow, lastCol, rowIdx, colIdx);
+      setSelectedCells(rangeSelection);
+      setLastSelected([rowIdx, colIdx]);
+    } else {
+      setSelectedCells(new Set([key]));
+      setLastSelected([rowIdx, colIdx]);
+    }
+  }, [lastSelected, selectCellRange]);
+
+  const handleMouseDown = useCallback((rowIdx: number, colIdx: number, e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    
+    isSelecting.current = true;
+    selectionStart.current = [rowIdx, colIdx];
+    const key = cellKey(rowIdx, colIdx);
+
+    if (e.ctrlKey || e.metaKey) {
+      selectionMode.current = 'additive';
+      setLastSelected([rowIdx, colIdx]);
+    } else if (e.shiftKey && lastSelected) {
+      selectionMode.current = 'range';
+      const [lastRow, lastCol] = lastSelected;
+      const rangeSelection = selectCellRange(lastRow, lastCol, rowIdx, colIdx);
+      setSelectedCells(rangeSelection);
+      setLastSelected([rowIdx, colIdx]);
+    } else {
+      selectionMode.current = 'normal';
+      setSelectedCells(new Set([key]));
+      setLastSelected([rowIdx, colIdx]);
+    }
+  }, [lastSelected, selectCellRange]);
+
+  const handleMouseEnter = useCallback((rowIdx: number, colIdx: number, e: React.MouseEvent) => {
+    if (isSelecting.current && e.buttons === 1 && selectionStart.current) {
+      const [startRow, startCol] = selectionStart.current;
+      
+      if (selectionMode.current === 'additive') {
+        const newSelection = selectCellRange(startRow, startCol, rowIdx, colIdx);
+        setSelectedCells((prev) => {
+          const combinedSet = new Set(prev);
+          newSelection.forEach(cell => combinedSet.add(cell));
+          return combinedSet;
+        });
+      } else if (selectionMode.current === 'range' && lastSelected) {
+        const [lastRow, lastCol] = lastSelected;
+        const rangeSelection = selectCellRange(lastRow, lastCol, rowIdx, colIdx);
+        setSelectedCells(rangeSelection);
+      } else {
+        const newSelection = selectCellRange(startRow, startCol, rowIdx, colIdx);
+        setSelectedCells(newSelection);
+      }
+      
+      setLastSelected([rowIdx, colIdx]);
+    }
+  }, [lastSelected, selectCellRange]);
+
+  const handleMouseUp = useCallback(() => {
+    isSelecting.current = false;
+    selectionStart.current = null;
+    selectionMode.current = 'normal';
+  }, []);
+
+  // Copiar para clipboard
+  useEffect(() => {
+    function handleCopy(e: ClipboardEvent) {
+      if (selectedCells.size === 0) return;
+      e.preventDefault();
+
+      const coords = Array.from(selectedCells).map((key) =>
+        key.split(",").map(Number)
+      );
+      const rows = coords.map(([r]) => r);
+      const cols = coords.map(([, c]) => c);
+      const minRow = Math.min(...rows);
+      const maxRow = Math.max(...rows);
+      const minCol = Math.min(...cols);
+      const maxCol = Math.max(...cols);
+
+      let text = "";
+
+      for (let r = minRow; r <= maxRow; r++) {
+        const rowText: string[] = [];
+        for (let c = minCol; c <= maxCol; c++) {
+          const cellKeyStr = cellKey(r, c);
+          if (selectedCells.has(cellKeyStr) && dados && dados[r]) {
+            const row = dados[r];
+            if (c < columns.length) {
+              const value = row[columns[c] as keyof ReportRow];
+              rowText.push(value !== undefined && value !== null ? String(value) : "");
+            } else {
+              const valueIndex = c - columns.length;
+              const value = row.values?.[valueIndex];
+              rowText.push(value !== undefined && value !== null ? String(value) : "");
+            }
+          } else {
+            rowText.push("");
+          }
+        }
+        text += rowText.join("\t") + "\n";
+      }
+
+      if (e.clipboardData) {
+        e.clipboardData.setData("text/plain", text);
+      }
+    }
+
+    document.addEventListener("copy", handleCopy);
+    return () => document.removeEventListener("copy", handleCopy);
+  }, [selectedCells, dados, columns]);
+
+  // Limpar seleção ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (tableRef.current && !tableRef.current.contains(event.target as Node)) {
+        setSelectedCells(new Set());
+        setLastSelected(null);
+      }
+    }
+    
+    function handleGlobalMouseUp() {
+      isSelecting.current = false;
+      selectionStart.current = null;
+      selectionMode.current = 'normal';
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mouseup", handleGlobalMouseUp);
+    
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("mouseup", handleGlobalMouseUp);
+    };
+  }, []);
+
+  // Navegação por teclado
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (!lastSelected || !dados) return;
+      
+      const [row, col] = lastSelected;
+      let newRow = row;
+      let newCol = col;
+      
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        newRow = Math.min(dados.length - 1, row + 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        newRow = Math.max(0, row - 1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        newCol = Math.min(columns.length + (dados[0]?.values?.length || 0) - 1, col + 1);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        newCol = Math.max(0, col - 1);
+      } else {
+        return;
+      }
+      
+      if (e.shiftKey) {
+        const rangeSelection = selectCellRange(row, col, newRow, newCol);
+        setSelectedCells(rangeSelection);
+      } else {
+        setSelectedCells(new Set([cellKey(newRow, newCol)]));
+      }
+      
+      setLastSelected([newRow, newCol]);
+      
+      const cellElement = document.querySelector(`[data-key="${cellKey(newRow, newCol)}"]`);
+      cellElement?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+    
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lastSelected, dados, columns.length, selectCellRange]);
+
+  if (loading) return <div className="p-4">Carregando...</div>;
+  if (error) return <div className="p-4 text-red-500">{error}</div>;
+  if (!dados || dados.length === 0) return <div className="p-4">Nenhum dado encontrado</div>;
 
   return (
-    <div className="overflow-auto">
-      <Table cellPadding="10" style={{ borderCollapse: "collapse" }}>
-        <TableHeader style={{ background: "#f2f2f2" }}>
-          <TableRow className="[&>*]:whitespace-nowrap bg-background sticky top-0 after:content-[''] after:inset-x-0 after:h-px after:bg-border after:absolute after:bottom-0">
-            <TableHead className='text-center'>Dia</TableHead>
-            <TableHead>Hora</TableHead>
-            <TableHead>Nome</TableHead>
-            <TableHead>Form1</TableHead>
-            <TableHead>Form2</TableHead>
-            {dados[0]?.values.map((_, index) => (
-              <TableHead key={index}>Value {index + 1}</TableHead>
+    <div 
+      ref={tableRef} 
+      className="overflow-auto" 
+      onMouseUp={handleMouseUp} // moved para wrapper
+    >
+      <div className="text-sm mb-2 p-2 bg-gray-100 rounded">
+        {selectedCells.size > 0 ? `${selectedCells.size} células selecionadas` : "Nenhuma célula selecionada"}
+        <span className="ml-4 text-gray-600 text-xs">
+          • Clique: seleciona uma célula • 
+          Ctrl+Clique: adiciona/remove células • 
+          Shift+Clique: seleciona intervalo • 
+          Arraste: seleciona múltiplas células
+        </span>
+      </div>
+      
+      <Table className="border-collapse border border-gray-300 w-full">
+        <TableHeader className="bg-gray-100 sticky top-0">
+          <TableRow>
+            {columns.map((col, idx) => (
+              <TableHead 
+                key={idx} 
+                className="py-2 px-5 text-center border border-gray-300 font-semibold"
+              >
+                {col}
+              </TableHead>
             ))}
-
+            {dados[0]?.values?.map((_, idx) => (
+              <TableHead 
+                key={idx + columns.length} 
+                className="p-2 border border-gray-300 font-semibold text-center"
+              >
+                Value {idx + 1}
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
           {dados.map((row, i) => (
-            <TableRow key={i} className="[&>td]:border-r last:border-r-0 text-center odd:bg-red-50 even:bg-white">
-              <TableCell className="font-medium h-[10%] px-10">{row.Dia}</TableCell>
-              <TableCell>{row.Hora}</TableCell>
-              <TableCell>{row.Nome}</TableCell>
-              <TableCell>{row.Form1}</TableCell>
-              <TableCell>{row.Form2}</TableCell>
-              {row.values.map((val, j) => (
-                <TableCell key={j}>{val}</TableCell>
+            <TableRow key={i} className="hover:bg-gray-50">
+              {columns.map((col, j) => (
+                <TableCell
+                  key={j}
+                  data-key={cellKey(i, j)}
+                  className={`p-2 border border-gray-300 cursor-pointer select-none text-center ${
+                    selectedCells.has(cellKey(i, j)) 
+                      ? "bg-blue-200 font-medium" 
+                      : i % 2 === 0 
+                        ? "bg-red-50" 
+                        : "bg-white"
+                  }`}
+                  onClick={(e) => handleCellClick(i, j, e)}
+                  onMouseDown={(e) => handleMouseDown(i, j, e)}
+                  onMouseEnter={(e) => handleMouseEnter(i, j, e)}
+                  tabIndex={0}
+                >
+                  {row[col as keyof ReportRow]}
+                </TableCell>
+              ))}
+              {row.values?.map((val, j) => (
+                <TableCell
+                  key={j + columns.length}
+                  data-key={cellKey(i, j + columns.length)}
+                  className={`p-2 border border-gray-300 cursor-pointer select-none text-center ${
+                    selectedCells.has(cellKey(i, j + columns.length)) 
+                      ? "bg-blue-200 font-medium" 
+                      : i % 2 === 0 
+                        ? "bg-red-50" 
+                        : "bg-white"
+                  }`}
+                  onClick={(e) => handleCellClick(i, j + columns.length, e)}
+                  onMouseDown={(e) => handleMouseDown(i, j + columns.length, e)}
+                  onMouseEnter={(e) => handleMouseEnter(i, j + columns.length, e)}
+                  tabIndex={0}
+                >
+                  {val}
+                </TableCell>
               ))}
             </TableRow>
           ))}

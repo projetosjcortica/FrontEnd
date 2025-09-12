@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import Home from './home';
-import Cfg from './config';
+import { GeneralConfig, IHMConfig, DatabaseConfig, AdminConfig, initialFormData, FormData} from './config';
 import Report from './report';
-
-import { Sidebar,SidebarFooter,SidebarContent,SidebarGroup,SidebarHeader,SidebarProvider,SidebarGroupContent,SidebarMenu,SidebarMenuButton,SidebarMenuItem, SidebarGroupLabel,} from "./components/ui/sidebar";
+import { Sidebar,SidebarFooter,SidebarContent,SidebarGroup,SidebarHeader,SidebarProvider,SidebarGroupContent,SidebarMenu,SidebarMenuSubButton,SidebarMenuButton,SidebarMenuItem, SidebarGroupLabel,} from "./components/ui/sidebar";
 import { HomeIcon, Settings, Sheet} from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from './components/ui/avatar';
 import { ToastContainer } from 'react-toastify';
 import './index.css'
 import { Factory } from 'lucide-react';
 import { Separator } from '@radix-ui/react-separator';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './components/ui/collapsible';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from './components/ui/dialog';
 
 const App = () => {  
  
@@ -23,9 +24,9 @@ const App = () => {
     case 'Report':
       content = <Report />;
       break;
-    case 'Cfg':
-      content = <Cfg />;
-      break;
+    // case 'Cfg':
+    //   content = <Cfg />;
+    //   break;
     default:
       content = <h1>404 - Not Found</h1>;
   }
@@ -48,6 +49,21 @@ const App = () => {
       view: 'Cfg'
     }
   ]
+
+  const [formData, setFormData] = useState<FormData>(initialFormData);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const handleChange = (key: keyof FormData, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleEdit = () => setIsEditing(true);
+  const handleCancel = () => setIsEditing(false);
+  const handleSave = () => {
+    console.log("Dados salvos:", formData);
+    setIsEditing(false);
+  };
+
   return (<div id='app' className='flex flex-row w-screen h-dvh '>
     <div id='sidebar' className='flex items-end'>
       <SidebarProvider className='flex items-end'>
@@ -93,20 +109,91 @@ const App = () => {
                 <SidebarGroupLabel>Outros</SidebarGroupLabel>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {itemsFooter.map((itemsFooter) => (
+                    <Collapsible>
+                      {itemsFooter.map((itemsFooter) => (
                       <SidebarMenuItem key={itemsFooter.title}>
-                        <SidebarMenuButton
-                          onClick={() => setView(itemsFooter.view)}
-                          className={`flex itemsFooters-center gap-2 transition-colors 
-                            ${view === itemsFooter.view 
-                              ? "bg-sidebar-accent text-sidebar-accent-foreground" 
-                              : "hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"}`}
-                        >
+                        <CollapsibleTrigger className='w-full'>
+                          <SidebarMenuButton>
                           <itemsFooter.icon />
                           <span>{itemsFooter.title}</span>
                         </SidebarMenuButton>
+                        </CollapsibleTrigger>
+                          <CollapsibleContent className="text-popover-foreground flex flex-col outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2">
+                            <Dialog>
+                              <DialogTrigger>
+                                <SidebarMenuSubButton>
+                                <p>Geral</p>
+                                </SidebarMenuSubButton>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogTitle>Geral</DialogTitle>
+                                <GeneralConfig
+                                  formData={formData}
+                                  isEditing={isEditing}
+                                  onChange={handleChange}
+                                  onEdit={handleEdit}
+                                  onSave={handleSave}
+                                  onCancel={handleCancel}
+                                />
+                              </DialogContent>
+                            </Dialog>
+                            <Dialog>
+                              <DialogTrigger>
+                                <SidebarMenuSubButton>
+                                <p>Banco de dados</p>
+                                </SidebarMenuSubButton>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogTitle>Banco de dados</DialogTitle>
+                                <DatabaseConfig
+                                  formData={formData}
+                                  isEditing={isEditing}
+                                  onChange={handleChange}
+                                  onEdit={handleEdit}
+                                  onSave={handleSave}
+                                  onCancel={handleCancel}
+                                />
+                              </DialogContent>
+                            </Dialog>
+                            <Dialog>
+                              <DialogTrigger>
+                                <SidebarMenuSubButton>
+                                  <p>IHM</p>
+                                </SidebarMenuSubButton>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogTitle>IHM</DialogTitle>
+                                <IHMConfig
+                                  formData={formData}
+                                  isEditing={isEditing}
+                                  onChange={handleChange}
+                                  onEdit={handleEdit}
+                                  onSave={handleSave}
+                                  onCancel={handleCancel}/>
+                              </DialogContent>
+                            </Dialog>
+                            <Dialog>
+                              <DialogTrigger>
+                                <SidebarMenuSubButton>
+                                  <p>ADM</p>
+                                </SidebarMenuSubButton>
+                              </DialogTrigger>
+                              <DialogContent>
+                                <DialogTitle>Administrador</DialogTitle>
+                                <AdminConfig
+                                  formData={formData}
+                                  isEditing={isEditing}
+                                  onChange={handleChange}
+                                  onEdit={handleEdit}
+                                  onSave={handleSave}
+                                  onCancel={handleCancel}
+                                />
+                              </DialogContent>
+                            </Dialog>
+                          </CollapsibleContent>
                       </SidebarMenuItem>
                     ))}
+                    </Collapsible>
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
