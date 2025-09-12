@@ -7,18 +7,18 @@ import {
   TableCell,
   TableRow,
 } from "./components/ui/table";
-import { useFiltros } from "./hooks/useFiltros";
 import { useReportData } from "./hooks/useReportData";
-import { ReportRow } from "./components/types";
+import { Filtros, ReportRow } from "./components/types";
 
 interface TableComponentProps {
   filtroTexto?: string;
+  filtros?: Filtros; // opcional
 }
+export default function TableComponent({ filtros }: TableComponentProps) {
+  const { dados, loading, error } = useReportData(
+    filtros ?? { dataInicio: "", dataFim: "", nomeFormula: "" }
+  );
 
-export default function TableComponent({ filtroTexto }: TableComponentProps) {
-  const { filtros } = useFiltros();
-  const { dados, loading, error } = useReportData(filtros);
-  
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [lastSelected, setLastSelected] = useState<[number, number] | null>(null);
   const tableRef = useRef<HTMLDivElement>(null); // Mudei para div (wrapper)

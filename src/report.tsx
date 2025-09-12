@@ -3,20 +3,25 @@ import 'react-toastify/dist/ReactToastify.css';
 import { Button } from "./components/ui/button"
 import Products, { colLabelsBase } from "./products";
 // import { Input } from "./components/ui/input";
-import { SelectSeparator } from "./components/ui/select"
 import TableComponent from "./TableComponent";
 import  FiltrosBar  from "./components/searchBar"
+import { Filtros } from "./components/types";
 
 
 function Report() {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [, setColLabels] = useState<{ [key: string]: string }>(colLabelsBase);
   const[view,setView] = useState('table');
+  const [, setFiltros] = useState<Filtros>({
+    dataInicio: "",
+    dataFim: "",
+    nomeFormula: ""
+  });
 
   let content;
     switch (view) {
       case 'table':
-        content = <TableComponent/>;
+        content = <TableComponent filtros={undefined}/>;
       break;
       case 'product':
         content = <Products />;
@@ -54,7 +59,9 @@ function Report() {
             <Button onClick={()=>setView('table')}>relatórios</Button>
             <Button onClick={()=>setView('product')}>Produtos</Button>
           </div>
-          <SelectSeparator/>
+            <div id="searchBar" className="flex flex-row items-end justify-end">
+              <FiltrosBar onAplicarFiltros={setFiltros} />
+            </div>
         </div>
         <div id="searchBar" className="flex flex-row items-end justify-end">
           <div id="searchBar" className="flex flex-row items-end justify-end">
