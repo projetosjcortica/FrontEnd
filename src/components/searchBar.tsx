@@ -12,6 +12,14 @@ export default function FiltrosBar({ onAplicarFiltros }: FiltrosBarProps) {
   const { filtros, handleFiltroChange, limparFiltros } = useFiltros();
   const [filtrosTemporarios, setFiltrosTemporarios] = useState<Filtros>(filtros);
 
+  
+  // Teste de botão
+  // const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  //   event.preventDefault();
+  //   console.log('Button clicked!');
+  // };
+
+
   // Atualiza os filtros temporários quando os inputs mudam
   const handleInputChange = (nome: keyof Filtros, valor: string) => {
     setFiltrosTemporarios(prev => ({
@@ -21,17 +29,14 @@ export default function FiltrosBar({ onAplicarFiltros }: FiltrosBarProps) {
   };
 
   // Aplica os filtros
-  const handleAplicar = () => {
-    // Atualiza os filtros no hook
-    Object.entries(filtrosTemporarios).forEach(([key, value]) => {
-      handleFiltroChange(key as keyof Filtros, value);
-    });
+  const handleBuscar = () => {
+  Object.entries(filtrosTemporarios).forEach(([key, value]) => {
+    handleFiltroChange(key as keyof Filtros, value);
+  });
 
-    // Notifica o componente pai
-    if (onAplicarFiltros) {
-      onAplicarFiltros(filtrosTemporarios);
-    }
-  };
+  console.log("Aplicando filtros:", filtrosTemporarios); // ← log adicionado
+  if (onAplicarFiltros) onAplicarFiltros(filtrosTemporarios);
+};
 
   // Limpa todos os filtros
   const handleLimpar = () => {
@@ -75,7 +80,7 @@ export default function FiltrosBar({ onAplicarFiltros }: FiltrosBarProps) {
         className="border-black w-40"
       />
       
-      <Button variant='outline'onClick={handleAplicar} className=" text-black">
+      <Button variant='outline'onClick={handleBuscar} className=" text-black">
         Buscar
       </Button>
       

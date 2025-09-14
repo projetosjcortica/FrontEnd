@@ -1,125 +1,112 @@
-import { useState, useEffect } from "react";
+// Products.tsx - CORRIGIDO
+import { useEffect } from "react";
 import { Input } from "./components/ui/input";
+import { ScrollArea } from "./components/ui/scroll-area";
 import { RadioGroup, RadioGroupItem } from "./components/ui/radio-group";
 import { Label } from "./components/ui/label";
-import { ScrollArea } from "./components/ui/scroll-area";
+import { ColLabel } from "./hooks/useLabelService";
+import { IS_LOCAL } from "./CFG";
 
-
-export type ColLabels = Record<string, string>;
-export const colLabelsBase = {
-        col1: "Data",
-        col2: "Horario",
-        col3: "Nome fórmula",
-        col4: "Código Programa",
-        col5: "Código Fórmula",
-        col6: "",
-        col7: "",
-        col8: "",
-        col9: "",
-        col10:"",
-        col11:"",
-        col12:"",
-        col13:"",
-        col14:"",
-        col15:"",
-        col16:"",
-        col17:"",
-        col18:"",
-        col19:"",
-        col20:"",
-        col21:"",
-        col22:"",
-        col23:"",
-        col24:"",
-        col25:"",
-        col26:"",
-        col27:"",
-        col28:"",
-        col29:"",
-        col30:"",
-        col31:"",
-        col32:"",
-        col33:"",
-        col34:"",
-        col35:"",
-        col36:"",
-        col37:"",
-        col38:"",
-        col39:"",
-        col40:"",
-        col41:"",
-        col42:"",
-        col43:"",
-        col44:"",
-        col45:"",
-        col46:"",
-        col47:"",
-        col48:"",
-        col49:"",
-        col50:"",
-        col51:"",
-        col52:"",
-        col53:"",
-        col54:"",
-        col55:""
+interface ProductsProps {
+  colLabels: { [key: string]: string };
+  setColLabels: React.Dispatch<React.SetStateAction<{ [key: string]: string }>>;
+  onLabelChange: (colKey: string, newName: string, unidade?: string) => void;
 }
-function Products() {
-  const storageKey = "colLabels";
 
-  const [colLabels, setColLabels] = useState<ColLabels>(() => {
-    const saved = localStorage.getItem(storageKey);
-    return saved ? JSON.parse(saved) : colLabelsBase;
-  });
-
+function Products({ colLabels, setColLabels, onLabelChange }: ProductsProps) {
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(colLabels));
-  }, [colLabels]);
+    const fetchLabels = async () => {
+      try {
+        if (IS_LOCAL) {
+          // Para mock, usa localStorage ou objeto vazio
+          const saved = localStorage.getItem("colLabels");
+          if (saved) {
+            const labelsArray: ColLabel[] = JSON.parse(saved);
+            const labelsObj: { [key: string]: string } = {};
+            labelsArray.forEach(item => labelsObj[item.col_key] = item.col_name);
+            setColLabels(labelsObj);
+          }
+        } else {
+          // Para API real, faz a chamada
+          const response = await fetch("/api/col_labels");
+          if (response.ok) {
+            const labelsArray: ColLabel[] = await response.json();
+            const labelsObj: { [key: string]: string } = {};
+            labelsArray.forEach(item => labelsObj[item.col_key] = item.col_name);
+            setColLabels(labelsObj);
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao carregar labels:", err);
+      }
+    };
 
-  const handleLabelChange = (colKey: string, value: string) => {
-    setColLabels(prev => ({
-      ...prev,
-      [colKey]: value,
-    }));
+    fetchLabels();
+  }, [setColLabels]);
+
+  const handleUnidadeChange = (colKey: string, unidade: string) => {
+    // Para mock, salva no localStorage
+    if (IS_LOCAL) {
+      const saved = localStorage.getItem("colLabels");
+      let labels: ColLabel[] = saved ? JSON.parse(saved) : [];
+      
+      const index = labels.findIndex(l => l.col_key === colKey);
+      if (index !== -1) {
+        labels[index].unidade = unidade;
+      } else {
+        labels.push({ col_key: colKey, col_name: colLabels[colKey] || "", unidade });
+      }
+      
+      localStorage.setItem("colLabels", JSON.stringify(labels));
+    }
   };
 
-  // Ordena as chaves para exibir em ordem natural
   const columns = Object.keys(colLabels).sort((a, b) =>
     parseInt(a.replace("col", ""), 10) - parseInt(b.replace("col", ""), 10)
   );
 
-  const editableColumns = columns.filter(col => {
-    const colNumber = parseInt(col.replace("col", ""), 10);
-    return colNumber > 5;
-  });
+  const editableColumns = columns.filter(col => parseInt(col.replace("col", ""), 10) > 5);
 
-
-    return (
-        <div id="display" className="w-[60vw] h-[95vh] m-3 overflow-auto">
-            <h2 className="text-3xl font-semibold mb-4">Editar nome dos Produtos</h2>
-              <ScrollArea className="h-[72vh]">
-              <div className=" rounded p-3 grid grid-cols-2 gap-4 shadow-xl/20">
-                {editableColumns.map(col => (
-                  <div key={col}>
-                  <div className="flex flex-row justify-center items-center gap-1 border border-black rounded-lg pr-1">
-                    <Input className='m-0.5 h-8 inset-shadow-1'  type="text" placeholder={col} id={col} value={colLabels[col]}  onChange={e => handleLabelChange(col, e.target.value)}/>
-                    <div>
-                      <RadioGroup className="flex flex-row gap-1">
-                        <div className="flex flex-row">
-                          <RadioGroupItem value="gram" className="border-black mx-1"/>
-                          <Label>g</Label>
-                        </div>
-                        <div className="flex flex-row">
-                          <RadioGroupItem value="kilogram" className="border-black mx-1"/>
-                          <Label>kg</Label>
-                        </div>
-                      </RadioGroup>
+  return (
+    <div className="w-[60vw] h-[95vh] m-3 overflow-auto">
+      <h2 className="text-3xl font-semibold mb-4">Editar nome dos Produtos</h2>
+      <ScrollArea className="h-[72vh]">
+        <div className="rounded p-3 grid grid-cols-2 gap-4 shadow-xl/20">
+          {editableColumns.length === 0 && (
+            <p className="text-gray-500 col-span-2">Nenhuma coluna editável encontrada</p>
+          )}
+          {editableColumns.map(col => (
+            <div key={col}>
+              <div className="flex flex-row justify-center items-center gap-1 border border-black rounded-lg pr-1">
+                <Input
+                  className="m-0.5 h-8 inset-shadow-1"
+                  type="text"
+                  placeholder={col}
+                  value={colLabels?.[col] || ""}
+                  onChange={e => onLabelChange(col, e.target.value)}
+                />
+                <div>
+                  <RadioGroup 
+                    className="flex flex-row gap-1"
+                    onValueChange={(value) => handleUnidadeChange(col, value)}
+                  >
+                    <div className="flex flex-row">
+                      <RadioGroupItem value="gram" className="border-black mx-1" />
+                      <Label>g</Label>
                     </div>
-                  </div>
-                  </div>
-              ))}
+                    <div className="flex flex-row">
+                      <RadioGroupItem value="kilogram" className="border-black mx-1" />
+                      <Label>kg</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
               </div>
-            </ScrollArea>
+            </div>
+          ))}
         </div>
-    );
+      </ScrollArea>
+    </div>
+  );
 }
-export default Products
+
+export default Products;

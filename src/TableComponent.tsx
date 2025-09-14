@@ -11,10 +11,10 @@ import { useReportData } from "./hooks/useReportData";
 import { Filtros, ReportRow } from "./components/types";
 
 interface TableComponentProps {
-  filtroTexto?: string;
-  filtros?: Filtros; // opcional
+  filtros?: Filtros;
+  colLabels: { [key: string]: string }; // agora obrigatório
 }
-export default function TableComponent({ filtros }: TableComponentProps) {
+export default function TableComponent({ filtros, colLabels }: TableComponentProps) {
   const { dados, loading, error } = useReportData(
     filtros ?? { dataInicio: "", dataFim: "", nomeFormula: "" }
   );
@@ -26,7 +26,12 @@ export default function TableComponent({ filtros }: TableComponentProps) {
   const selectionStart = useRef<[number, number] | null>(null);
   const selectionMode = useRef<'normal' | 'additive' | 'range'>('normal');
   
-  const columns = ["Dia", "Hora", "Nome", "Form1", "Form2"];
+  const fixedColumns = ["Dia", "Hora", "Nome", "Form1", "Form2"];
+  const dynamicColumns = Object.keys(colLabels||{})
+    .sort((a, b) => parseInt(a.replace("col", ""), 10) - parseInt(b.replace("col", ""), 10))
+    .filter(col => parseInt(col.replace("col", ""), 10) > 5); 
+  const columns = [...fixedColumns, ...dynamicColumns];
+
   const cellKey = (rowIdx: number, colIdx: number) => `${rowIdx},${colIdx}`;
 
   const selectCellRange = useCallback((startRow: number, startCol: number, endRow: number, endCol: number) => {
@@ -259,63 +264,75 @@ export default function TableComponent({ filtros }: TableComponentProps) {
       <Table className="border-collapse border border-gray-300 w-full">
         <TableHeader className="bg-gray-100 sticky top-0">
           <TableRow>
-            {columns.map((col, idx) => (
-              <TableHead 
-                key={idx} 
+            {fixedColumns.map((col, idx) => (
+              <TableHead
+                key={idx}
                 className="py-2 px-5 text-center border border-gray-300 font-semibold"
               >
-                {col}
+                {colLabels?.[col] ?? col}
               </TableHead>
             ))}
-            {dados[0]?.values?.map((_, idx) => (
-              <TableHead 
-                key={idx + columns.length} 
-                className="p-2 border border-gray-300 font-semibold text-center"
+            {dynamicColumns.map((colKey, idx) => (
+              <TableHead
+                key={idx + fixedColumns.length}
+                className="py-2 px-5 text-center border border-gray-300 font-semibold"
               >
-                Value {idx + 1}
+                {/* Usa label do Products, se não existir usa colKey, se não existir fallback */}
+                {colLabels?.[colKey] ?? colKey ?? `Coluna ${idx + 6}`}
               </TableHead>
             ))}
           </TableRow>
         </TableHeader>
+
         <TableBody>
-          {dados.map((row, i) => (
-            <TableRow key={i} className="hover:bg-gray-50">
-              {columns.map((col, j) => (
+          {dados.map((row, rowIdx) => (
+            <TableRow key={rowIdx} className="hover:bg-gray-50">
+              {/* Fixed columns */}
+              {fixedColumns.map((col, colIdx) => (
                 <TableCell
-                  key={j}
-                  data-key={cellKey(i, j)}
+                  key={colIdx}
+                  data-key={cellKey(rowIdx, colIdx)}
                   className={`p-2 border border-gray-300 cursor-pointer select-none text-center ${
-                    selectedCells.has(cellKey(i, j)) 
-                      ? "bg-blue-200 font-medium" 
-                      : i % 2 === 0 
-                        ? "bg-red-50" 
-                        : "bg-white"
+                    selectedCells.has(cellKey(rowIdx, colIdx))
+                      ? "bg-blue-200 font-medium"
+                      : rowIdx % 2 === 0
+                      ? "bg-red-50"
+                      : "bg-white"
                   }`}
-                  onClick={(e) => handleCellClick(i, j, e)}
-                  onMouseDown={(e) => handleMouseDown(i, j, e)}
-                  onMouseEnter={(e) => handleMouseEnter(i, j, e)}
-                  tabIndex={0}
+                  onClick={(e) => handleCellClick(rowIdx, colIdx, e)}
+                  onMouseDown={(e) => handleMouseDown(rowIdx, colIdx, e)}
+                  onMouseEnter={(e) => handleMouseEnter(rowIdx, colIdx, e)}
                 >
                   {row[col as keyof ReportRow]}
                 </TableCell>
               ))}
-              {row.values?.map((val, j) => (
+
+              {/* Dynamic columns */}
+              {dynamicColumns.map((colKey, dynIdx) => (
                 <TableCell
-                  key={j + columns.length}
-                  data-key={cellKey(i, j + columns.length)}
+                  key={dynIdx + fixedColumns.length}
+                  data-key={cellKey(rowIdx, dynIdx + fixedColumns.length)}
                   className={`p-2 border border-gray-300 cursor-pointer select-none text-center ${
-                    selectedCells.has(cellKey(i, j + columns.length)) 
-                      ? "bg-blue-200 font-medium" 
-                      : i % 2 === 0 
-                        ? "bg-red-50" 
-                        : "bg-white"
+                    selectedCells.has(cellKey(rowIdx, dynIdx + fixedColumns.length))
+                      ? "bg-blue-200 font-medium"
+                      : rowIdx % 2 === 0
+                      ? "bg-red-50"
+                      : "bg-white"
                   }`}
-                  onClick={(e) => handleCellClick(i, j + columns.length, e)}
-                  onMouseDown={(e) => handleMouseDown(i, j + columns.length, e)}
-                  onMouseEnter={(e) => handleMouseEnter(i, j + columns.length, e)}
-                  tabIndex={0}
+                  onClick={(e) =>
+                    handleCellClick(rowIdx, dynIdx + fixedColumns.length, e)
+                  }
+                  onMouseDown={(e) =>
+                    handleMouseDown(rowIdx, dynIdx + fixedColumns.length, e)
+                  }
+                  onMouseEnter={(e) =>
+                    handleMouseEnter(rowIdx, dynIdx + fixedColumns.length, e)
+                  }
                 >
-                  {val}
+                  {/* Pega valor tanto do   objeto quanto de values[], compatível com casa/escritório */}
+                  {row[colKey as keyof ReportRow] ??
+                    row.values?.[dynIdx] ??
+                    ""}
                 </TableCell>
               ))}
             </TableRow>

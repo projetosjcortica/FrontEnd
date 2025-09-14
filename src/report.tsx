@@ -1,88 +1,101 @@
-import { useState, useEffect, useRef } from "react";
-import 'react-toastify/dist/ReactToastify.css';
-import { Button } from "./components/ui/button"
-import Products, { colLabelsBase } from "./products";
-// import { Input } from "./components/ui/input";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 import TableComponent from "./TableComponent";
-import  FiltrosBar  from "./components/searchBar"
+import Products from "./products";
+import FiltrosBar from "./components/searchBar";
+import { Button } from "./components/ui/button";
 import { Filtros } from "./components/types";
+import { fetchLabels, ColLabel } from "./hooks/useLabelService";
+import { IS_LOCAL } from "./CFG";
 
-
-function Report() {
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [, setColLabels] = useState<{ [key: string]: string }>(colLabelsBase);
-  const[view,setView] = useState('table');
-  const [, setFiltros] = useState<Filtros>({
+export default function Report() {
+  const [filtros, setFiltros] = useState<Filtros>({
     dataInicio: "",
     dataFim: "",
-    nomeFormula: ""
+    nomeFormula: "",
   });
 
-  let content;
-    switch (view) {
-      case 'table':
-        content = <TableComponent filtros={undefined}/>;
-      break;
-      case 'product':
-        content = <Products />;
-      break;
-      default:
-        content = <h1>404 - Not Found</h1>;
-}
+  const [colLabels, setColLabels] = useState<{ [key: string]: string }>({});
+  const [view, setView] = useState<'table' | 'product'>('table');
 
+  // Carregar labels
   useEffect(() => {
-    const savedLabels = localStorage.getItem("colLabels");
-    if (savedLabels) {
-      setColLabels(JSON.parse(savedLabels));
-    }
-  }, []);
+    const loadLabels = async () => {
+      try {
+        // Prioriza localStorage se estiver usando mock
+        if (IS_LOCAL) { // ← CORREÇÃO AQUI
+          const saved = localStorage.getItem("colLabels");
+          if (saved) {
+            setColLabels(JSON.parse(saved));
+            return;
+          }
+        }
 
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    console.log('Button clicked!');
-  };
+        const labelsArray: ColLabel[] = await fetchLabels();
+        const labelsObj: { [key: string]: string } = {};
+        labelsArray.forEach(l => labelsObj[l.col_key] = l.col_name);
+        setColLabels(labelsObj);
 
-  useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        if (IS_LOCAL) localStorage.setItem("colLabels", JSON.stringify(labelsObj));
+      } catch (err) {
+        console.error("Erro ao buscar labels:", err);
       }
     };
+
+    loadLabels();
   }, []);
-  
+
+  // Função para alterar labels - CORRIGIDA
+  const handleLabelChange = async (colKey: string, value: string, unidade?: string) => {
+    setColLabels(prev => {
+      const newLabels = { ...prev, [colKey]: value };
+      if (IS_LOCAL) localStorage.setItem("colLabels", JSON.stringify(newLabels));
+      return newLabels;
+    });
+
+    if (!IS_LOCAL) {
+      try {
+        await axios.put(`/api/col_labels/${colKey}`, { 
+          col_name: value, 
+          unidade: unidade || null 
+        });
+      } catch (error) {
+        console.error("Erro ao atualizar label:", error);
+      }
+    }
+  };
+
+  let content;
+  if (view === 'table') {
+    content = <TableComponent filtros={filtros} colLabels={colLabels} />;
+  } else if (view === 'product') {
+    content = (
+      <Products
+        colLabels={colLabels}
+        setColLabels={setColLabels}
+        onLabelChange={handleLabelChange}
+      />
+    );
+  }
 
   return (
     <div className="overflow-hidden flex flex-col gap-7 w-[100vw] h-full">
-      <div id="top-container" className="h-30 flex flex-row justify-between">
-        <div id="toggle-page" className="flex flex-row items-end">
-          <div id="buttons" className="flex flex-row gap-2">
-            <Button onClick={()=>setView('table')}>relatórios</Button>
-            <Button onClick={()=>setView('product')}>Produtos</Button>
-          </div>
-            <div id="searchBar" className="flex flex-row items-end justify-end">
-              <FiltrosBar onAplicarFiltros={setFiltros} />
-            </div>
+      <div className="h-30 flex flex-row justify-between">
+        <div className="flex flex-row items-end gap-2">
+          <Button onClick={() => setView('table')}>Relatórios</Button>
+          <Button onClick={() => setView('product')}>Produtos</Button>
         </div>
-        <div id="searchBar" className="flex flex-row items-end justify-end">
-          <div id="searchBar" className="flex flex-row items-end justify-end">
-            <FiltrosBar/>
-
-          </div>
-          <Button className="ml-2" onClick={handleClick}>
-            <span className="tooltip-text">Automático</span>
-          </Button>
-          <Button className="ml-2" onClick={handleClick}>
-            <span className="tooltip-text">Upload</span>
-          </Button>
+        <div className="flex flex-row items-end justify-end gap-2">
+          <FiltrosBar onAplicarFiltros={setFiltros} />
+          <Button>Automático</Button>
+          <Button>Upload</Button>
         </div>
       </div>
-      <div id="display" className="flex flex-row gap-3.5 flex items-end h-[81vh]">
-        <div id="db" className="w-[83vw] mx-auto h-[82.5vh] scroll-smooth scrollbar-custom shadow-xl/16 flex justify-center">
-            {content}
+      <div className="flex flex-row gap-3.5 items-end h-[81vh]">
+        <div className="w-[83vw] mx-auto h-[82.5vh] overflow-auto shadow-xl/16 flex justify-center">
+          {content}
         </div>
       </div>
     </div>
   );
 }
-
-export default Report;
