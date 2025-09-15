@@ -126,7 +126,6 @@ const App = () => {
                                 </SidebarMenuSubButton>
                               </DialogTrigger>
                               <DialogContent>
-                                <DialogTitle>Geral</DialogTitle>
                                 <GeneralConfig
                                   formData={formData}
                                   isEditing={isEditing}
