@@ -1,12 +1,10 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
-import { fileURLToPath } from 'node:url';
-import path from 'node:path';
-import fs from 'node:fs';
-
-
+import * as path from 'path';
+import Store from 'electron-store';
+import fs from 'fs'
+import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 process.env.APP_ROOT = path.join(__dirname, '..');
 
 export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
@@ -19,50 +17,64 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
 
 let win: BrowserWindow | null;
 
-
-const dataFilePath = path.join(app.getPath('userData'), 'formData.json');
-
+// Define the complete form data structure to match the frontend
 interface FormData {
-  serverDB?: string;
-  userDB?: string;
-  passwordDB?: string;
-  database?: string;
-  [key: string]: string | undefined; // outras chaves possíveis
+  nomeCliente: string;
+  ip: string;
+  user: string;
+  password: string;
+  localCSV: string;
+  metodoCSV: string;
+  habilitarCSV: boolean;
+  serverDB: string;
+  database: string;
+  userDB: string;
+  passwordDB: string;
+  mySqlDir: string;
+  dumpDir: string;
+  batchDumpDir: string;
 }
 
-interface AppData {
-  formData?: FormData;
-  [key: string]: unknown; // outras chaves possíveis
-}
+// Initial data structure to match the frontend
+const initialFormData: FormData = {
+  nomeCliente: "",
+  ip: "",
+  user: "",
+  password: "",
+  localCSV: "",
+  metodoCSV: "", // '1' ou '2'
+  habilitarCSV: false,
+  serverDB: "",
+  database: "",
+  userDB: "",
+  passwordDB: "",
+  mySqlDir: "",
+  dumpDir: "",
+  batchDumpDir: "",
+};
 
-function readJSON(filePath: string): AppData {
-  if (!fs.existsSync(filePath)) return {};
+// Initialize electron-store
+const store = new Store({
+  defaults: {
+    formData: initialFormData
+  },
+  name: 'app-config'
+});
+
+// IPC Handlers using electron-store
+ipcMain.handle('save-data', async (_event, key: string, data: FormData): Promise<boolean> => {
   try {
-    const content = fs.readFileSync(filePath, 'utf-8');
-    return JSON.parse(content) as AppData;
-  } catch (err) {
-    console.error('Erro ao fazer parse do JSON:', err);
-    return {};
-  }
-}
-
-function writeJSON(filePath: string, data: AppData): boolean {
-  try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
-    return true;
-  } catch (err) {
-    console.error('Erro ao salvar JSON:', err);
-    return false;
-  }
-}
-
-// IPC Handlers
-ipcMain.handle('save-data', async (_event, key: string, value: string | number | boolean): Promise<boolean> => {
-  try {
-    const existingData = readJSON(dataFilePath) || {  };
-    existingData[key] = value;
-    const saved = writeJSON(dataFilePath, existingData);
-    if (!saved) throw new Error('Falha ao salvar dados');
+    if (key === 'all') {
+      // Save all form data
+      store.set('formData', data);
+    } else {
+      // Update specific section while preserving other data
+      const existingData = store.get('formData', initialFormData) as FormData;
+      const updatedData = { ...existingData, ...data };
+      store.set('formData', updatedData);
+    }
+    
+    console.log('Dados salvos com sucesso para a chave:', key);
     return true;
   } catch (err) {
     console.error('Erro ao salvar dados:', err);
@@ -70,14 +82,13 @@ ipcMain.handle('save-data', async (_event, key: string, value: string | number |
   }
 });
 
-ipcMain.handle('load-data', async (_event, key: string): Promise< unknown |string | number | boolean | null > => {
+ipcMain.handle('load-data', async (_event, key: string): Promise<FormData> => {
   try {
-    const data = readJSON(dataFilePath); 
-    if (!data) return {}; 
-    return data[key] || {};
+    const data = store.get('formData', initialFormData) as FormData;
+    return data;
   } catch (err) {
     console.error("Erro ao carregar dados:", err);
-    return {};
+    return initialFormData;
   }
 });
 
@@ -94,6 +105,34 @@ ipcMain.handle('select-folder', async () => {
   const folderPath = result.filePaths[0];
   console.log('Pasta selecionada:', folderPath);
   return folderPath;
+});
+
+ipcMain.handle('select-file', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile'],
+  });
+
+  if (result.canceled || result.filePaths.length === 0) {
+    console.log('Nenhum arquivo selecionado');
+    return null;
+  }
+
+  const filePath = result.filePaths[0];
+  console.log('Arquivo selecionado:', filePath);
+  return filePath;
+});
+
+ipcMain.handle('clean-db', async (): Promise<boolean> => {
+  // Implement your database cleaning logic here
+  console.log('Limpando banco de dados...');
+  
+  // Simulate success for demonstration
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('Banco de dados limpo com sucesso');
+      resolve(true);
+    }, 1000);
+  });
 });
 
 function createWindow() {

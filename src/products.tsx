@@ -48,7 +48,7 @@ function Products({ colLabels, setColLabels, onLabelChange }: ProductsProps) {
     // Para mock, salva no localStorage
     if (IS_LOCAL) {
       const saved = localStorage.getItem("colLabels");
-      let labels: ColLabel[] = saved ? JSON.parse(saved) : [];
+      const labels: ColLabel[] = saved ? JSON.parse(saved) : [];
       
       const index = labels.findIndex(l => l.col_key === colKey);
       if (index !== -1) {
