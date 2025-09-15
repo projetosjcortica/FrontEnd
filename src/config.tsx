@@ -504,7 +504,7 @@ export function AdminConfig({ configKey = "admin-config" }: { configKey?: string
         <div id="sidetxt" className="mb-4">
           <Label className="font-medium text-gray-700">
             Importar dump padrão
-            <Button className="w-full mt-2" disabled={!isEditing}>
+            <Button className="w-100 mt-2" disabled={!isEditing}>
               Importar Dump
             </Button>
           </Label>
@@ -515,7 +515,7 @@ export function AdminConfig({ configKey = "admin-config" }: { configKey?: string
             <div id="sidetxt">
               <Label className="font-medium text-gray-700">
                 Zerar banco de Dados
-                <Button className="w-full mt-2" disabled={!isEditing}>
+                <Button className="w-100 mt-2" disabled={!isEditing}>
                   Zerar banco
                 </Button>
               </Label>
