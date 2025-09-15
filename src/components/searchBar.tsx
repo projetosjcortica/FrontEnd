@@ -64,28 +64,28 @@ export default function FiltrosBar({ onAplicarFiltros }: FiltrosBarProps) {
   };
 
   // Exemplo de função para chamar a API
-  const fetchDadosDaAPI = async (filtros: Filtros) => {
-    try {
-      const response = await fetch('/api/relatorios', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dataInicio: filtros.dataInicio,
-          dataFim: filtros.dataFim,
-          nomeFormula: filtros.nomeFormula
-        })
-      });
+  // const fetchDadosDaAPI = async (filtros: Filtros) => {
+  //   try {
+  //     const response = await fetch('/api/relatorios', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify({
+  //         dataInicio: filtros.dataInicio,
+  //         dataFim: filtros.dataFim,
+  //         nomeFormula: filtros.nomeFormula
+  //       })
+  //     });
       
-      const data = await response.json();
-      console.log("Dados da API:", data);
-      // Atualize seu estado com os dados recebidos
+  //     const data = await response.json();
+  //     console.log("Dados da API:", data);
+  //     // Atualize seu estado com os dados recebidos
       
-    } catch (error) {
-      console.error("Erro ao buscar dados da API:", error);
-    }
-  };
+  //   } catch (error) {
+  //     console.error("Erro ao buscar dados da API:", error);
+  //   }
+  // };
 
   // Limpa todos os filtros
   const handleLimpar = () => {
