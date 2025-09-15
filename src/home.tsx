@@ -1,4 +1,14 @@
 function Home(){
-    return <h1>Home</h1>
+    
+    return (
+        <div id="display">
+            <div id="pizza">
+
+            </div>
+            <div id="barras">
+
+            </div>
+        </div>
+    )
 }
 export default Home;

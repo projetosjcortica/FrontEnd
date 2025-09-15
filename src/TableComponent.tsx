@@ -21,7 +21,7 @@ export default function TableComponent({ filtros, colLabels }: TableComponentPro
 
   const [selectedCells, setSelectedCells] = useState<Set<string>>(new Set());
   const [lastSelected, setLastSelected] = useState<[number, number] | null>(null);
-  const tableRef = useRef<HTMLDivElement>(null); // Mudei para div (wrapper)
+  const tableRef = useRef<HTMLDivElement>(null);
   const isSelecting = useRef(false);
   const selectionStart = useRef<[number, number] | null>(null);
   const selectionMode = useRef<'normal' | 'additive' | 'range'>('normal');
@@ -267,7 +267,7 @@ export default function TableComponent({ filtros, colLabels }: TableComponentPro
             {fixedColumns.map((col, idx) => (
               <TableHead
                 key={idx}
-                className="py-2 px-5 text-center border border-gray-300 font-semibold"
+                className="py-2 px-5 text-center border border-gray-300 font-semibold w-100"
               >
                 {colLabels?.[col] ?? col}
               </TableHead>
@@ -275,7 +275,7 @@ export default function TableComponent({ filtros, colLabels }: TableComponentPro
             {dynamicColumns.map((colKey, idx) => (
               <TableHead
                 key={idx + fixedColumns.length}
-                className="py-2 px-5 text-center border border-gray-300 font-semibold"
+                className="py-2 px-5 text-center border border-gray-300 font-semibold w-30"
               >
                 {/* Usa label do Products, se não existir usa colKey, se não existir fallback */}
                 {colLabels?.[colKey] ?? colKey ?? `Coluna ${idx + 6}`}

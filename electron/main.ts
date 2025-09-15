@@ -1,7 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as path from 'path';
 import Store from 'electron-store';
-import fs from 'fs'
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -62,7 +62,7 @@ const store = new Store({
 });
 
 // IPC Handlers using electron-store
-ipcMain.handle('save-data', async (_event, key: string, data: FormData): Promise<boolean> => {
+ipcMain.handle('save-data', async (_, key: string, data: Partial<FormData>): Promise<boolean> => {
   try {
     if (key === 'all') {
       // Save all form data
@@ -82,7 +82,7 @@ ipcMain.handle('save-data', async (_event, key: string, data: FormData): Promise
   }
 });
 
-ipcMain.handle('load-data', async (_event, key: string): Promise<FormData> => {
+ipcMain.handle('load-data', async (): Promise<FormData> => {
   try {
     const data = store.get('formData', initialFormData) as FormData;
     return data;
@@ -93,7 +93,7 @@ ipcMain.handle('load-data', async (_event, key: string): Promise<FormData> => {
 });
 
 ipcMain.handle('select-folder', async () => {
-  const result = await dialog.showOpenDialog({
+  const result = await dialog.showOpenDialog(win!, {
     properties: ['openDirectory'],
   });
 
@@ -108,7 +108,7 @@ ipcMain.handle('select-folder', async () => {
 });
 
 ipcMain.handle('select-file', async () => {
-  const result = await dialog.showOpenDialog({
+  const result = await dialog.showOpenDialog(win!, {
     properties: ['openFile'],
   });
 
@@ -140,10 +140,12 @@ function createWindow() {
     icon: path.join(process.env.VITE_PUBLIC!, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
+      nodeIntegration: false,
+      contextIsolation: true,
     },
   });
 
-  win.maximize(),
+  win.maximize();
 
   win.webContents.on('did-finish-load', () => {
     win?.webContents.send('main-process-message', new Date().toLocaleString());
@@ -157,18 +159,6 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  const rawData = readJSON(dataFilePath);
-  const formData = rawData.formData || {};
-
-  const dbConfig = {
-    server: formData.serverDB || 'localhost',
-    user: formData.userDB || 'root',
-    password: formData.passwordDB || '',
-    database: formData.database || 'testes',
-  };
-
-  console.log('Configuração do banco enviada:', dbConfig);
-
   createWindow();
 
   app.on('activate', () => {
@@ -178,12 +168,9 @@ app.whenReady().then(() => {
   });
 });
 
-// 🧼 Encerrar backend e app corretamente
+// Encerrar backend e app corretamente
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
-});
-
-app.on('will-quit', () => {
 });
 
 // Logging
@@ -194,6 +181,6 @@ process.on('uncaughtException', (error: Error) => {
   logStream.write(`[${new Date().toISOString()}] Uncaught Exception: ${error.stack}\n`);
 });
 
-process.on('unhandledRejection', (reason) => {
+process.on('unhandledRejection', (reason: unknown) => {
   logStream.write(`[${new Date().toISOString()}] Unhandled Rejection: ${reason}\n`);
 });
