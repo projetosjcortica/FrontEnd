@@ -44,6 +44,7 @@ export default function FiltrosBar({ onAplicarFiltros }: FiltrosBarProps) {
   });
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     console.log("Aplicando filtros para API:", filtrosTemporarios);
     
     // Chama a API ou callback pai
@@ -78,6 +79,11 @@ export default function FiltrosBar({ onAplicarFiltros }: FiltrosBarProps) {
   //     console.error("Erro ao buscar dados da API:", error);
   //   }
   // };
+=======
+  console.log("Aplicando filtros:", filtrosTemporarios); // ← log adicionado
+  if (onAplicarFiltros) onAplicarFiltros(filtrosTemporarios);
+};
+>>>>>>> parent of af2bfe4 (filtro funcionando no mock)
 =======
   console.log("Aplicando filtros:", filtrosTemporarios); // ← log adicionado
   if (onAplicarFiltros) onAplicarFiltros(filtrosTemporarios);

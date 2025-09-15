@@ -38,8 +38,11 @@
     "react-dom": "^18.2.0",
     "react-toastify": "^11.0.5",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "recharts": "^2.15.4",
 =======
+=======
+>>>>>>> parent of af2bfe4 (filtro funcionando no mock)
     "shadcn": "^3.2.1",
 >>>>>>> parent of af2bfe4 (filtro funcionando no mock)
     "sonner": "^2.0.7",
