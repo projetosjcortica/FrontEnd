@@ -21,19 +21,35 @@ function Products({ colLabels, setColLabels, onLabelChange }: ProductsProps) {
           // Para mock, usa localStorage ou objeto vazio
           const saved = localStorage.getItem("colLabels");
           if (saved) {
-            const labelsArray: ColLabel[] = JSON.parse(saved);
-            const labelsObj: { [key: string]: string } = {};
-            labelsArray.forEach(item => labelsObj[item.col_key] = item.col_name);
-            setColLabels(labelsObj);
+            let parsed: any = null;
+            try {
+              parsed = JSON.parse(saved);
+            } catch (e) {
+              console.warn('colLabels in localStorage is invalid JSON')
+            }
+            if (Array.isArray(parsed)) {
+              const labelsArray: ColLabel[] = parsed;
+              const labelsObj: { [key: string]: string } = {};
+              labelsArray.forEach(item => (labelsObj[item.col_key] = item.col_name));
+              setColLabels(labelsObj);
+            } else if (parsed && typeof parsed === 'object') {
+              // If stored as object, use it directly
+              setColLabels(parsed as { [key: string]: string });
+            }
           }
         } else {
           // Para API real, faz a chamada
           const response = await fetch("/api/col_labels");
           if (response.ok) {
-            const labelsArray: ColLabel[] = await response.json();
-            const labelsObj: { [key: string]: string } = {};
-            labelsArray.forEach(item => labelsObj[item.col_key] = item.col_name);
-            setColLabels(labelsObj);
+            const json: any = await response.json();
+            if (Array.isArray(json)) {
+              const labelsArray: ColLabel[] = json;
+              const labelsObj: { [key: string]: string } = {};
+              labelsArray.forEach(item => (labelsObj[item.col_key] = item.col_name));
+              setColLabels(labelsObj);
+            } else if (json && typeof json === 'object') {
+              setColLabels(json as { [key: string]: string });
+            }
           }
         }
       } catch (err) {

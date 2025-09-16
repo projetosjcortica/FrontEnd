@@ -64,6 +64,17 @@ declare global {
 
 type FormDataKey = keyof FormData;
 
+// Define props interface for configuration components
+interface ConfigComponentProps {
+  formData: FormData;
+  isEditing: boolean;
+  onChange: (key: FormDataKey, value: string | boolean) => void;
+  onEdit: () => void;
+  onSave: () => void;
+  onCancel: () => void;
+  configKey?: string;
+}
+
 // Custom hook to manage form state with persistence
 function usePersistentForm(key: string) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
@@ -134,7 +145,7 @@ export function GeneralConfig({ configKey = "general-config" }: { configKey?: st
   const { formData, isEditing, onChange, onEdit, onSave, onCancel } = usePersistentForm(configKey);
 
   return (
-    <div id="geral" className="flex flex-col gap-4 p-6 bg-white rounded-lg shadow-md border">
+    <div id="geral" className="flex flex-col gap-4  bg-white ">
       <h2 className="text-xl font-bold text-gray-800 mb-4">Configuração Geral</h2>
       
       <Label className="text-lg font-semibold">
@@ -239,7 +250,7 @@ export function IHMConfig({ configKey = "ihm-config" }: { configKey?: string }) 
   const { formData, isEditing, onChange, onEdit, onSave, onCancel } = usePersistentForm(configKey);
 
   return (
-    <div id="webCfg" className="flex flex-col gap-4 p-6 bg-white rounded-lg shadow-md border">
+    <div id="webCfg" className="flex flex-col gap-4 bg-white">
       <h2 className="text-xl font-bold text-gray-800 mb-4">Configuração IHM</h2>
       
       <Label className="font-medium text-gray-700">
@@ -336,7 +347,7 @@ export function DatabaseConfig({ configKey = "db-config" }: { configKey?: string
   const { formData, isEditing, onChange, onEdit, onSave, onCancel } = usePersistentForm(configKey);
 
   return (
-    <div id="dbCfg" className="flex flex-col gap-4 p-6 bg-white rounded-lg shadow-md border">
+    <div id="dbCfg" className="flex flex-col gap-4 bg-white">
       <h2 className="text-xl font-bold text-gray-800 mb-4">Configuração do Banco de Dados</h2>
       
       <Label className="font-medium text-gray-700">
@@ -421,7 +432,7 @@ export function AdminConfig({ configKey = "admin-config" }: { configKey?: string
   const { formData, isEditing, onChange, onEdit, onSave, onCancel } = usePersistentForm(configKey);
 
   return (
-    <div id="adm" className="flex flex-col gap-4 p-6 bg-white rounded-lg shadow-md border">
+    <div id="adm" className="flex flex-col gap-4 bg-white ">
       <h2 className="text-xl font-bold text-gray-800 mb-4">Configurações Administrativas</h2>
 
       <div id="CfgAdvancedDB" className="my-4">
@@ -504,7 +515,7 @@ export function AdminConfig({ configKey = "admin-config" }: { configKey?: string
         <div id="sidetxt" className="mb-4">
           <Label className="font-medium text-gray-700">
             Importar dump padrão
-            <Button className="w-full mt-2" disabled={!isEditing}>
+            <Button className="w-100 mt-2" disabled={!isEditing}>
               Importar Dump
             </Button>
           </Label>
@@ -515,7 +526,7 @@ export function AdminConfig({ configKey = "admin-config" }: { configKey?: string
             <div id="sidetxt">
               <Label className="font-medium text-gray-700">
                 Zerar banco de Dados
-                <Button className="w-full mt-2" disabled={!isEditing}>
+                <Button className="w-100 mt-2" disabled={!isEditing}>
                   Zerar banco
                 </Button>
               </Label>
@@ -581,21 +592,6 @@ export function AdminConfig({ configKey = "admin-config" }: { configKey?: string
             Editar
           </Button>
         )}
-      </div>
-    </div>
-  );
-}
-
-// Example usage in a parent component
-export function ConfigurationPanel() {
-  return (
-    <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">Configurações do Sistema</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <GeneralConfig />
-        <IHMConfig />
-        <DatabaseConfig />
-        <AdminConfig />
       </div>
     </div>
   );

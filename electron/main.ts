@@ -1,23 +1,27 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
-import * as path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import Store from 'electron-store';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-process.env.APP_ROOT = path.join(__dirname, '..');
+// ES module compatible __dirname replacement
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL'];
-export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron');
-export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist');
+// Simplified path handling
+const isDev = process.env.NODE_ENV === 'development' || !!process.env.VITE_DEV_SERVER_URL;
+const appRoot = join(__dirname, isDev ? '..' : '../..');
 
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL
-  ? path.join(process.env.APP_ROOT, 'public')
+// Path configuration
+export const VITE_DEV_SERVER_URL = process.env.VITE_DEV_SERVER_URL;
+export const RENDERER_DIST = join(appRoot, 'dist');
+export const PUBLIC_PATH = VITE_DEV_SERVER_URL 
+  ? join(appRoot, 'public') 
   : RENDERER_DIST;
 
 let win: BrowserWindow | null;
 
-// Define the complete form data structure to match the frontend
+// Interfaces
 interface FormData {
   nomeCliente: string;
   ip: string;
@@ -35,14 +39,13 @@ interface FormData {
   batchDumpDir: string;
 }
 
-// Initial data structure to match the frontend
 const initialFormData: FormData = {
   nomeCliente: "",
   ip: "",
   user: "",
   password: "",
   localCSV: "",
-  metodoCSV: "", // '1' ou '2'
+  metodoCSV: "",
   habilitarCSV: false,
   serverDB: "",
   database: "",
@@ -53,27 +56,21 @@ const initialFormData: FormData = {
   batchDumpDir: "",
 };
 
-// Initialize electron-store
+// Initialize store
 const store = new Store({
-  defaults: {
-    formData: initialFormData
-  },
+  defaults: { formData: initialFormData },
   name: 'app-config'
 });
 
-// IPC Handlers using electron-store
-ipcMain.handle('save-data', async (_, key: string, data: Partial<FormData>): Promise<boolean> => {
+// IPC Handlers
+ipcMain.handle('save-data', async (_, key: string, data: Partial<FormData>) => {
   try {
     if (key === 'all') {
-      // Save all form data
       store.set('formData', data);
     } else {
-      // Update specific section while preserving other data
       const existingData = store.get('formData', initialFormData) as FormData;
-      const updatedData = { ...existingData, ...data };
-      store.set('formData', updatedData);
+      store.set('formData', { ...existingData, ...data });
     }
-    
     console.log('Dados salvos com sucesso para a chave:', key);
     return true;
   } catch (err) {
@@ -82,10 +79,9 @@ ipcMain.handle('save-data', async (_, key: string, data: Partial<FormData>): Pro
   }
 });
 
-ipcMain.handle('load-data', async (): Promise<FormData> => {
+ipcMain.handle('load-data', async () => {
   try {
-    const data = store.get('formData', initialFormData) as FormData;
-    return data;
+    return store.get('formData', initialFormData) as FormData;
   } catch (err) {
     console.error("Erro ao carregar dados:", err);
     return initialFormData;
@@ -93,53 +89,39 @@ ipcMain.handle('load-data', async (): Promise<FormData> => {
 });
 
 ipcMain.handle('select-folder', async () => {
-  const result = await dialog.showOpenDialog(win!, {
+  if (!win) return null;
+  
+  const result = await dialog.showOpenDialog(win, {
     properties: ['openDirectory'],
   });
 
-  if (result.canceled || result.filePaths.length === 0) {
-    console.log('Nenhuma pasta selecionada');
-    return null;
-  }
-
-  const folderPath = result.filePaths[0];
-  console.log('Pasta selecionada:', folderPath);
-  return folderPath;
+  return result.canceled ? null : result.filePaths[0];
 });
 
 ipcMain.handle('select-file', async () => {
-  const result = await dialog.showOpenDialog(win!, {
+  if (!win) return null;
+  
+  const result = await dialog.showOpenDialog(win, {
     properties: ['openFile'],
   });
 
-  if (result.canceled || result.filePaths.length === 0) {
-    console.log('Nenhum arquivo selecionado');
-    return null;
-  }
-
-  const filePath = result.filePaths[0];
-  console.log('Arquivo selecionado:', filePath);
-  return filePath;
+  return result.canceled ? null : result.filePaths[0];
 });
 
-ipcMain.handle('clean-db', async (): Promise<boolean> => {
-  // Implement your database cleaning logic here
+ipcMain.handle('clean-db', async () => {
   console.log('Limpando banco de dados...');
-  
-  // Simulate success for demonstration
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      console.log('Banco de dados limpo com sucesso');
-      resolve(true);
-    }, 1000);
-  });
+  // Add actual database cleaning logic here
+  return new Promise(resolve => setTimeout(() => {
+    console.log('Banco de dados limpo com sucesso');
+    resolve(true);
+  }, 1000));
 });
 
 function createWindow() {
   win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC!, 'electron-vite.svg'),
+    icon: join(PUBLIC_PATH, 'electron-vite.svg'),
     webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
+      preload: join(__dirname, 'preload.mjs'),
       nodeIntegration: false,
       contextIsolation: true,
     },
@@ -147,34 +129,32 @@ function createWindow() {
 
   win.maximize();
 
-  win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', new Date().toLocaleString());
-  });
-
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
+    // Open dev tools in development
+    win.webContents.openDevTools();
   } else {
-    win.loadFile(path.join(RENDERER_DIST, 'index.html'));
+    win.loadFile(join(RENDERER_DIST, 'index.html'));
   }
+
+  return win;
 }
 
+// App event handlers
 app.whenReady().then(() => {
   createWindow();
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-// Encerrar backend e app corretamente
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Logging
-const logFilePath = path.join(app.getPath('userData'), 'error.log');
+// Error logging
+const logFilePath = join(app.getPath('userData'), 'error.log');
 const logStream = fs.createWriteStream(logFilePath, { flags: 'a' });
 
 process.on('uncaughtException', (error: Error) => {
